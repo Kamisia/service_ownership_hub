@@ -6,7 +6,7 @@ import { makeId, now, teamsReducer } from "../utils/teams";
 
 import { TeamsTable } from "../components/teams/TeamsTable";
 import { CreateTeamModal } from "../components/teams/CreateTeamModal";
-import { EditServicesModal } from "../components/teams/EditServicesModa";
+import { EditServicesModal } from "../components/teams/EditServicesModal";
 
 export default function Teams() {
  const initialTeams: Team[] = [
@@ -55,11 +55,18 @@ const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ display: "flex", alignItems: "center" }}>
-        <h2 style={{ marginRight: 20 }}>Teams</h2>
+        <h2 style={{ marginRight: 20 }}>List of Teams</h2>
         <Button onClick={() => setCreateOpen(true)}>Add team +</Button>
       </div>
 
-      <TeamsTable teams={teams} onEditServices={(id) => setEditId(id)} />
+      <TeamsTable
+        teams={teams}
+        onEdit={(id) => setEditId(id)}
+        onDelete={(id) => {
+          // commit 2/3: podepniemy modal + reducer
+          console.log("delete team", id);
+        }}
+      />
 
       <CreateTeamModal
         show={createOpen}

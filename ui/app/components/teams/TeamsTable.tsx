@@ -16,55 +16,75 @@ export interface Team {
 
 interface TeamsTableProps {
   teams: Team[];
-  onEditServices: (teamId: TeamId) => void;
+  onEdit: (teamId: TeamId) => void;
+  onDelete: (teamId: TeamId) => void;
 }
 
-export function TeamsTable({ teams, onEditServices }: TeamsTableProps) {
-  const servicesCell = useCallback<DataTableCustomCell<Team, unknown>>(
-    ({ rowData }) => (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          height: "100%",
-          gap: 8,
-          minHeight: 32,
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          {rowData.services.length === 0 ? (
-            <span style={{ opacity: 0.7 }}>No services</span>
-          ) : (
-            <ChipGroup>
-              {rowData.services.map((s) => (
-                <Chip key={s.id}>{s.name}</Chip>
-              ))}
-            </ChipGroup>
-          )}
-        </div>
 
-        <Button onClick={() => onEditServices(rowData.id)}>Edit</Button>
+export function TeamsTable({ teams,  onEdit, onDelete }: TeamsTableProps) {
+  const servicesCell = useCallback<DataTableCustomCell<Team, unknown>>(
+  ({ rowData }) => (
+    <div style={{ display: "flex", alignItems: "center", height: "100%", minHeight: 32 }}>
+      <div style={{ minWidth: 0 }}>
+        {rowData.services.length === 0 ? (
+          <span style={{ opacity: 0.7 }}>No services</span>
+        ) : (
+          <ChipGroup>
+            {rowData.services.map((s) => (
+              <Chip key={s.id}>{s.name}</Chip>
+            ))}
+          </ChipGroup>
+        )}
       </div>
-    ),
-    [onEditServices]
-  );
+    </div>
+  ),
+  []
+);
+
+const actionsCell = useCallback<DataTableCustomCell<Team, unknown>>(
+  ({ rowData }) => (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        gap: 8,
+        height: "100%",
+        minHeight: 32,
+      }}
+    >
+      <Button onClick={() => onEdit(rowData.id)}>Edit</Button>
+      <Button onClick={() => onDelete(rowData.id)}>Delete</Button>
+    </div>
+  ),
+  [onEdit, onDelete]
+);
+
 
   const columns = useMemo((): DataTableColumnDef<Team, unknown>[] => {
-    return [
-      { id: "team", header: "Team", accessor: "name", columnType: "text", width: "2fr" },
+  return [
+    { id: "team", header: "Team", accessor: "name", columnType: "text", width: "2fr" },
+    {
+      id: "services",
+      header: "Services",
+      accessor: "services",
+      columnType: "text",
+      width: "5fr",
+      cell: servicesCell,
+      disableSorting: true,
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      accessor: "id",
+      columnType: "text",
+      width: "1.5fr",
+      cell: actionsCell,
+      disableSorting: true,
+    },
+  ];
+}, [servicesCell, actionsCell]);
 
-      {
-        id: "services",
-        header: "Services",
-        accessor: "services",
-        columnType: "text",
-        width: "5fr",
-        cell: servicesCell,
-        disableSorting: true,
-      },
-    ];
-  }, [servicesCell]);
 
   return (
     <div style={{ width: "90%", margin: "0 auto", minWidth: 700 }}>
