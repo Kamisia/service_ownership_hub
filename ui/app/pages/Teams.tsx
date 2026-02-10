@@ -6,7 +6,7 @@ import { makeId, now, teamsReducer } from "../utils/teams";
 
 import { TeamsTable } from "../components/teams/TeamsTable";
 import { CreateTeamModal } from "../components/teams/CreateTeamModal";
-import { EditServicesModal } from "../components/teams/EditServicesModal";
+import { EditTeamModal } from "../components/teams/EditTeamModal";
 
 export default function Teams() {
  const initialTeams: Team[] = [
@@ -51,6 +51,10 @@ const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
     () => teams.find((t) => t.id === editId) ?? null,
     [teams, editId]
   );
+    const otherTeamNames = useMemo(
+    () => teams.filter((t) => t.id !== editId).map((t) => t.name),
+    [teams, editId]
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -63,7 +67,6 @@ const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
         teams={teams}
         onEdit={(id) => setEditId(id)}
         onDelete={(id) => {
-          // commit 2/3: podepniemy modal + reducer
           console.log("delete team", id);
         }}
       />
@@ -85,16 +88,17 @@ const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
         }}
       />
 
-      <EditServicesModal
+            <EditTeamModal
         show={!!editingTeam}
         team={editingTeam}
+        existing={otherTeamNames}
         onDismiss={() => setEditId(null)}
-        onSave={(services) => {
-          if (!editingTeam) return;
-          dispatch({ type: "SERVICES_SET", teamId: editingTeam.id, services });
+        onSave={(name, services) => {
+        console.log("save team", { id: editingTeam?.id, name, services });
           setEditId(null);
         }}
       />
+
     </div>
   );
 }
