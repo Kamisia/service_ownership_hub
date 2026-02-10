@@ -8,7 +8,7 @@ export const Header = () => {
       <AppHeader.NavItems>
         <AppHeader.AppNavLink as={Link} to="/" />
         <AppHeader.NavItem as={Link} to="/data">
-          Explore Data
+          Teams Error
         </AppHeader.NavItem>
       </AppHeader.NavItems>
     </AppHeader>
