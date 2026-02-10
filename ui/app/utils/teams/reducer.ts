@@ -4,7 +4,9 @@ import { now } from "./helpers";
 export type TeamsEvent =
   | { type: "TEAM_ADD"; team: Team }
   | { type: "SERVICES_SET"; teamId: TeamId; services: Service[] }
-  | { type: "TEAM_UPDATE"; teamId: TeamId; name: string; services: Service[] };
+  | { type: "TEAM_UPDATE"; teamId: TeamId; name: string; services: Service[] }
+  | { type: "TEAM_DELETE"; teamId: TeamId };
+
 
 export function teamsReducer(state: Team[], e: TeamsEvent): Team[] {
   switch (e.type) {
@@ -26,6 +28,9 @@ export function teamsReducer(state: Team[], e: TeamsEvent): Team[] {
             }
         : t
   );
+    case "TEAM_DELETE":
+        return state.filter((t) => t.id !== e.teamId);
+
 
 
     default:

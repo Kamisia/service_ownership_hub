@@ -7,6 +7,7 @@ import { makeId, now, teamsReducer } from "../utils/teams";
 import { TeamsTable } from "../components/teams/TeamsTable";
 import { CreateTeamModal } from "../components/teams/CreateTeamModal";
 import { EditTeamModal } from "../components/teams/EditTeamModal";
+import { DeleteTeamModal } from "../components/teams/DeleteTeamModal";
 
 export default function Teams() {
  const initialTeams: Team[] = [
@@ -46,11 +47,17 @@ const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editId, setEditId] = useState<TeamId | null>(null);
+  const [deleteId, setDeleteId] = useState<TeamId | null>(null);
 
   const editingTeam = useMemo(
     () => teams.find((t) => t.id === editId) ?? null,
     [teams, editId]
   );
+  const deletingTeam = useMemo(
+  () => teams.find((t) => t.id === deleteId) ?? null,
+  [teams, deleteId]
+);
+
     const otherTeamNames = useMemo(
     () => teams.filter((t) => t.id !== editId).map((t) => t.name),
     [teams, editId]
@@ -66,9 +73,7 @@ const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
       <TeamsTable
         teams={teams}
         onEdit={(id) => setEditId(id)}
-        onDelete={(id) => {
-          console.log("delete team", id);
-        }}
+        onDelete={(id) => setDeleteId(id)}
       />
 
       <CreateTeamModal
@@ -107,6 +112,22 @@ const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
           }}
 
       />
+      <DeleteTeamModal
+  show={!!deletingTeam}
+  team={deletingTeam}
+  onDismiss={() => setDeleteId(null)}
+  onConfirm={() => {
+    if (!deletingTeam) return;
+
+    dispatch({
+      type: "TEAM_DELETE",
+      teamId: deletingTeam.id,
+    });
+
+    setDeleteId(null);
+  }}
+/>
+
 
     </div>
   );
