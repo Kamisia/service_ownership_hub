@@ -9,7 +9,40 @@ import { CreateTeamModal } from "../components/teams/CreateTeamModal";
 import { EditServicesModal } from "../components/teams/EditServicesModa";
 
 export default function Teams() {
-  const [teams, dispatch] = useReducer(teamsReducer, []);
+ const initialTeams: Team[] = [
+  {
+    id: makeId(),
+    name: "Platform Team",
+    services: [
+      { id: makeId(), name: "auth-service", createdAt: now(), updatedAt: now() },
+      { id: makeId(), name: "billing-api", createdAt: now(), updatedAt: now() },
+    ],
+    createdAt: now(),
+    updatedAt: now(),
+  },
+  {
+    id: makeId(),
+    name: "SRE",
+    services: [
+      { id: makeId(), name: "observability", createdAt: now(), updatedAt: now() },
+      { id: makeId(), name: "incident-bot", createdAt: now(), updatedAt: now() },
+    ],
+    createdAt: now(),
+    updatedAt: now(),
+  },
+  {
+    id: makeId(),
+    name: "Frontend",
+    services: [
+      { id: makeId(), name: "ui-shell", createdAt: now(), updatedAt: now() },
+      { id: makeId(), name: "design-system", createdAt: now(), updatedAt: now() },
+    ],
+    createdAt: now(),
+    updatedAt: now(),
+  },
+];
+
+const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editId, setEditId] = useState<TeamId | null>(null);
