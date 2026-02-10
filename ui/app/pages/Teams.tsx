@@ -94,9 +94,18 @@ const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
         existing={otherTeamNames}
         onDismiss={() => setEditId(null)}
         onSave={(name, services) => {
-        console.log("save team", { id: editingTeam?.id, name, services });
-          setEditId(null);
-        }}
+            if (!editingTeam) return;
+
+            dispatch({
+              type: "TEAM_UPDATE",
+              teamId: editingTeam.id,
+              name,
+              services,
+            });
+
+            setEditId(null);
+          }}
+
       />
 
     </div>
