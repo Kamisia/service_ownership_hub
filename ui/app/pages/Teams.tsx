@@ -9,7 +9,7 @@ import { CreateTeamModal } from "../components/teams/CreateTeamModal";
 import { EditTeamModal } from "../components/teams/EditTeamModal";
 import { DeleteTeamModal } from "../components/teams/DeleteTeamModal";
 
-import { useAppStates, useSetAppState } from "@dynatrace-sdk/react-hooks";
+import { useUserAppStates, useSetUserAppState } from "@dynatrace-sdk/react-hooks";
 
 const TEAMS_STATE_KEY = "teams";
 const TEAMS_STATE_VERSION = "1";
@@ -52,15 +52,16 @@ export default function Teams() {
 
   const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
 
-  const appStates = useAppStates({
-    filter: `key = '${TEAMS_STATE_KEY}'`,
-    addFields: "value",
-  });
+  const userStates = useUserAppStates({
+  filter: `key = '${TEAMS_STATE_KEY}'`,
+  addFields: "value",
+});
+
   const hydratedRef = useRef(false);
 
 
   useEffect(() => {
-    const state = appStates.data?.[0];
+    const state = userStates.data?.[0];
     if (!state?.value) {
       hydratedRef.current = true;
       return;
@@ -77,21 +78,21 @@ export default function Teams() {
     } finally {
     hydratedRef.current = true;
     }
-  }, [appStates.data]);
+  }, [userStates.data]);
 
 useEffect(() => {
-    if (appStates.error) {
-      console.warn("Failed to load app state for teams:", appStates.error);
-      hydratedRef.current = true; // żeby nie blokować persist w nieskończoność
+    if (userStates.error) {
+      console.warn("Failed to load app state for teams:", userStates.error);
+      hydratedRef.current = true; 
     }
-  }, [appStates.error]);
-  
-  const { execute: setAppState } = useSetAppState();
+  }, [userStates.error]);
+
+  const { execute: setUserAppState } = useSetUserAppState();
   useEffect(() => {
   if (!hydratedRef.current) return;
 
   const handle = setTimeout(() => {
-     void setAppState({
+     void setUserAppState({
         key: TEAMS_STATE_KEY,
         body: {
           value: JSON.stringify({
@@ -105,7 +106,7 @@ useEffect(() => {
     }, 400);
 
   return () => clearTimeout(handle);
-}, [teams, setAppState]);
+}, [teams, setUserAppState]);
 
 
   const [createOpen, setCreateOpen] = useState(false);
