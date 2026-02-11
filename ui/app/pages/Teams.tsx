@@ -1,4 +1,4 @@
-import React, {  useMemo, useReducer, useState } from "react";
+import React, {  useEffect, useMemo, useReducer, useState } from "react";
 import { Button } from "@dynatrace/strato-components/buttons";
 
 import type { Team, TeamId } from "../utils/teams";
@@ -9,7 +9,8 @@ import { CreateTeamModal } from "../components/teams/CreateTeamModal";
 import { EditTeamModal } from "../components/teams/EditTeamModal";
 import { DeleteTeamModal } from "../components/teams/DeleteTeamModal";
 
-
+const TEAMS_STATE_VERSION = "1";
+const TEAMS_LOCAL_STORAGE_KEY = "service_ownership_hub/teams";
 
 export default function Teams() {
 
@@ -47,17 +48,33 @@ export default function Teams() {
   },
 ];
 
-  const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
+const [teams, dispatch] = useReducer(teamsReducer, initialTeams, (seed) => {
+  try {
+    const raw = localStorage.getItem(TEAMS_LOCAL_STORAGE_KEY);
+    if (!raw) return seed;
 
+    const parsed = JSON.parse(raw) as { version?: string; teams?: Team[] };
+    return Array.isArray(parsed?.teams) ? parsed.teams : seed;
+  } catch (e) {
+    console.warn("Failed to load teams from localStorage:", e);
+    return seed;
+  }
+});
 
+useEffect(() => {
+  const handle = setTimeout(() => {
+    try {
+      localStorage.setItem(
+        TEAMS_LOCAL_STORAGE_KEY,
+        JSON.stringify({ version: TEAMS_STATE_VERSION, teams })
+      );
+    } catch (e) {
+      console.error("Failed to persist teams to localStorage:", e);
+    }
+  }, 400);
 
-  
-
-
-
-
-
-
+  return () => clearTimeout(handle);
+}, [teams]);
 
 
   const [createOpen, setCreateOpen] = useState(false);
