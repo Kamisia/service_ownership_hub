@@ -1,4 +1,4 @@
-import React, { useMemo, useReducer, useState } from "react";
+import React, { useEffect, useMemo, useReducer, useState } from "react";
 import { Button } from "@dynatrace/strato-components/buttons";
 
 import type { Team, TeamId } from "../utils/teams";
@@ -9,7 +9,14 @@ import { CreateTeamModal } from "../components/teams/CreateTeamModal";
 import { EditTeamModal } from "../components/teams/EditTeamModal";
 import { DeleteTeamModal } from "../components/teams/DeleteTeamModal";
 
+import { useAppStates, useSetAppState } from "@dynatrace-sdk/react-hooks";
+
+const TEAMS_STATE_KEY = "teams";
+const TEAMS_STATE_VERSION = "1";
+
 export default function Teams() {
+
+
  const initialTeams: Team[] = [
   {
     id: makeId(),
@@ -43,7 +50,28 @@ export default function Teams() {
   },
 ];
 
-const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
+  const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
+
+  const appStates = useAppStates({
+    filter: `key = '${TEAMS_STATE_KEY}'`,
+    addFields: "value",
+  });
+
+  useEffect(() => {
+    const state = appStates.data?.[0];
+    if (!state?.value) return;
+
+    try {
+      const parsed = JSON.parse(state.value) as { version?: string; teams?: Team[] };
+
+      if (Array.isArray(parsed?.teams)) {
+        dispatch({ type: "TEAMS_REPLACE", teams: parsed.teams });
+      }
+    } catch (e) {
+      console.warn("Failed to parse app state for teams:", e);
+    }
+  }, [appStates.data]);
+
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editId, setEditId] = useState<TeamId | null>(null);
@@ -54,11 +82,11 @@ const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
     [teams, editId]
   );
   const deletingTeam = useMemo(
-  () => teams.find((t) => t.id === deleteId) ?? null,
-  [teams, deleteId]
-);
+    () => teams.find((t) => t.id === deleteId) ?? null,
+    [teams, deleteId]
+  );
 
-    const otherTeamNames = useMemo(
+  const otherTeamNames = useMemo(
     () => teams.filter((t) => t.id !== editId).map((t) => t.name),
     [teams, editId]
   );
@@ -113,22 +141,19 @@ const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
 
       />
       <DeleteTeamModal
-  show={!!deletingTeam}
-  team={deletingTeam}
-  onDismiss={() => setDeleteId(null)}
-  onConfirm={() => {
-    if (!deletingTeam) return;
+        show={!!deletingTeam}
+        team={deletingTeam}
+        onDismiss={() => setDeleteId(null)}
+        onConfirm={() => {
+           if (!deletingTeam) return;
+           dispatch({
+             type: "TEAM_DELETE",
+             teamId: deletingTeam.id,
+        });
 
-    dispatch({
-      type: "TEAM_DELETE",
-      teamId: deletingTeam.id,
-    });
-
-    setDeleteId(null);
-  }}
-/>
-
-
-    </div>
+        setDeleteId(null);
+        }}
+      />
+   </div>
   );
 }
