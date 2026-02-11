@@ -5,7 +5,9 @@ export type TeamsEvent =
   | { type: "TEAM_ADD"; team: Team }
   | { type: "SERVICES_SET"; teamId: TeamId; services: Service[] }
   | { type: "TEAM_UPDATE"; teamId: TeamId; name: string; services: Service[] }
-  | { type: "TEAM_DELETE"; teamId: TeamId };
+  | { type: "TEAM_DELETE"; teamId: TeamId }
+  | { type: "TEAMS_REPLACE"; teams: Team[] };
+
 
 
 export function teamsReducer(state: Team[], e: TeamsEvent): Team[] {
@@ -30,6 +32,9 @@ export function teamsReducer(state: Team[], e: TeamsEvent): Team[] {
   );
     case "TEAM_DELETE":
         return state.filter((t) => t.id !== e.teamId);
+    case "TEAMS_REPLACE":
+        return e.teams;
+    
 
 
 
