@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useReducer, useState } from "react";
+import React, { useRef, useEffect, useMemo, useReducer, useState } from "react";
 import { Button } from "@dynatrace/strato-components/buttons";
 
 import type { Team, TeamId } from "../utils/teams";
@@ -56,10 +56,15 @@ export default function Teams() {
     filter: `key = '${TEAMS_STATE_KEY}'`,
     addFields: "value",
   });
+  const hydratedRef = useRef(false);
+
 
   useEffect(() => {
     const state = appStates.data?.[0];
-    if (!state?.value) return;
+    if (!state?.value) {
+      hydratedRef.current = true;
+      return;
+    }
 
     try {
       const parsed = JSON.parse(state.value) as { version?: string; teams?: Team[] };
@@ -69,8 +74,38 @@ export default function Teams() {
       }
     } catch (e) {
       console.warn("Failed to parse app state for teams:", e);
+    } finally {
+    hydratedRef.current = true;
     }
   }, [appStates.data]);
+
+useEffect(() => {
+    if (appStates.error) {
+      console.warn("Failed to load app state for teams:", appStates.error);
+      hydratedRef.current = true; // żeby nie blokować persist w nieskończoność
+    }
+  }, [appStates.error]);
+  
+  const { execute: setAppState } = useSetAppState();
+  useEffect(() => {
+  if (!hydratedRef.current) return;
+
+  const handle = setTimeout(() => {
+     void setAppState({
+        key: TEAMS_STATE_KEY,
+        body: {
+          value: JSON.stringify({
+            version: TEAMS_STATE_VERSION,
+            teams,
+          }),
+        },
+      }).catch((e) => {
+        console.error("Failed to persist teams app state:", e);
+      });
+    }, 400);
+
+  return () => clearTimeout(handle);
+}, [teams, setAppState]);
 
 
   const [createOpen, setCreateOpen] = useState(false);
