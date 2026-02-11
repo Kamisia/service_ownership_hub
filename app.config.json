@@ -9,8 +9,9 @@
     "scopes": [
       { "name": "storage:logs:read", "comment": "default template" },
       { "name": "storage:buckets:read", "comment": "default template" },
-      { "name": "state:app-states:read", "comment": "load global app state (teams)" },
-      { "name": "state:app-states:write", "comment": "persist global app state (teams)" }
+      { "name": "state:user-app-states:read", "comment": "load per-user state (teams)" },
+      { "name": "state:user-app-states:write", "comment": "persist per-user state (teams)" }
+
     ]
   }
 }
