@@ -15,51 +15,21 @@ const TEAMS_LOCAL_STORAGE_KEY = "service_ownership_hub/teams";
 export default function Teams() {
 
 
- const initialTeams: Team[] = [
-  {
-    id: makeId(),
-    name: "Platform Team",
-    services: [
-      { id: makeId(), name: "auth-service", createdAt: now(), updatedAt: now() },
-      { id: makeId(), name: "billing-api", createdAt: now(), updatedAt: now() },
-    ],
-    createdAt: now(),
-    updatedAt: now(),
-  },
-  {
-    id: makeId(),
-    name: "SRE",
-    services: [
-      { id: makeId(), name: "observability", createdAt: now(), updatedAt: now() },
-      { id: makeId(), name: "incident-bot", createdAt: now(), updatedAt: now() },
-    ],
-    createdAt: now(),
-    updatedAt: now(),
-  },
-  {
-    id: makeId(),
-    name: "Frontend",
-    services: [
-      { id: makeId(), name: "ui-shell", createdAt: now(), updatedAt: now() },
-      { id: makeId(), name: "design-system", createdAt: now(), updatedAt: now() },
-    ],
-    createdAt: now(),
-    updatedAt: now(),
-  },
-];
 
-const [teams, dispatch] = useReducer(teamsReducer, initialTeams, (seed) => {
+
+const [teams, dispatch] = useReducer(teamsReducer, [], () => {
   try {
     const raw = localStorage.getItem(TEAMS_LOCAL_STORAGE_KEY);
-    if (!raw) return seed;
+    if (!raw) return [];
 
     const parsed = JSON.parse(raw) as { version?: string; teams?: Team[] };
-    return Array.isArray(parsed?.teams) ? parsed.teams : seed;
+    return Array.isArray(parsed?.teams) ? parsed.teams : [];
   } catch (e) {
     console.warn("Failed to load teams from localStorage:", e);
-    return seed;
+    return [];
   }
 });
+
 
 useEffect(() => {
   const handle = setTimeout(() => {
