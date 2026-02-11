@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo, useReducer, useState } from "react";
+import React, {  useMemo, useReducer, useState } from "react";
 import { Button } from "@dynatrace/strato-components/buttons";
 
 import type { Team, TeamId } from "../utils/teams";
@@ -9,10 +9,7 @@ import { CreateTeamModal } from "../components/teams/CreateTeamModal";
 import { EditTeamModal } from "../components/teams/EditTeamModal";
 import { DeleteTeamModal } from "../components/teams/DeleteTeamModal";
 
-import { useUserAppStates, useSetUserAppState } from "@dynatrace-sdk/react-hooks";
 
-const TEAMS_STATE_KEY = "teams";
-const TEAMS_STATE_VERSION = "1";
 
 export default function Teams() {
 
@@ -52,61 +49,15 @@ export default function Teams() {
 
   const [teams, dispatch] = useReducer(teamsReducer, initialTeams);
 
-  const userStates = useUserAppStates({
-  filter: `key = '${TEAMS_STATE_KEY}'`,
-  addFields: "value",
-});
-
-  const hydratedRef = useRef(false);
 
 
-  useEffect(() => {
-    const state = userStates.data?.[0];
-    if (!state?.value) {
-      hydratedRef.current = true;
-      return;
-    }
+  
 
-    try {
-      const parsed = JSON.parse(state.value) as { version?: string; teams?: Team[] };
 
-      if (Array.isArray(parsed?.teams)) {
-        dispatch({ type: "TEAMS_REPLACE", teams: parsed.teams });
-      }
-    } catch (e) {
-      console.warn("Failed to parse app state for teams:", e);
-    } finally {
-    hydratedRef.current = true;
-    }
-  }, [userStates.data]);
 
-useEffect(() => {
-    if (userStates.error) {
-      console.warn("Failed to load app state for teams:", userStates.error);
-      hydratedRef.current = true; 
-    }
-  }, [userStates.error]);
 
-  const { execute: setUserAppState } = useSetUserAppState();
-  useEffect(() => {
-  if (!hydratedRef.current) return;
 
-  const handle = setTimeout(() => {
-     void setUserAppState({
-        key: TEAMS_STATE_KEY,
-        body: {
-          value: JSON.stringify({
-            version: TEAMS_STATE_VERSION,
-            teams,
-          }),
-        },
-      }).catch((e) => {
-        console.error("Failed to persist teams app state:", e);
-      });
-    }, 400);
 
-  return () => clearTimeout(handle);
-}, [teams, setUserAppState]);
 
 
   const [createOpen, setCreateOpen] = useState(false);
