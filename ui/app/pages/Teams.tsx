@@ -8,6 +8,7 @@ import { TeamsTable } from "../components/teams/TeamsTable";
 import { CreateTeamModal } from "../components/teams/CreateTeamModal";
 import { EditTeamModal } from "../components/teams/EditTeamModal";
 import { DeleteTeamModal } from "../components/teams/DeleteTeamModal";
+import { PageSection } from "../components/layout/PageSection";
 
 const TEAMS_STATE_VERSION = "1";
 const TEAMS_LOCAL_STORAGE_KEY = "service_ownership_hub/teams";
@@ -66,17 +67,18 @@ useEffect(() => {
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <h2 style={{ marginRight: 20 }}>List of Teams</h2>
-        <Button onClick={() => setCreateOpen(true)}>Add team +</Button>
-      </div>
-
-      <TeamsTable
-        teams={teams}
-        onEdit={(id) => setEditId(id)}
-        onDelete={(id) => setDeleteId(id)}
-      />
+    <PageSection
+    title="Teams"
+    description="Manage team ownership and associated services."
+    right={<Button onClick={() => setCreateOpen(true)}>Add team +</Button>}
+  >
+     
+        <TeamsTable
+          teams={teams}
+          onEdit={(id) => setEditId(id)}
+          onDelete={(id) => setDeleteId(id)}
+        />
+      
 
       <CreateTeamModal
         show={createOpen}
@@ -128,6 +130,6 @@ useEffect(() => {
         setDeleteId(null);
         }}
       />
-   </div>
+   </PageSection>
   );
 }

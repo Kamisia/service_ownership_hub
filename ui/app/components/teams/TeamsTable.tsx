@@ -87,7 +87,7 @@ const actionsCell = useCallback<DataTableCustomCell<Team, unknown>>(
 
 
   return (
-    <div style={{ width: "90%", margin: "0 auto", minWidth: 700 }}>
+    <div style={{ width: "100%", margin: "0 auto", minWidth: 900 }}>
       <DataTable
         data={teams}
         columns={columns}
