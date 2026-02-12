@@ -3,16 +3,13 @@ import type { DataTableColumnDef } from "@dynatrace/strato-components-preview/ta
 import { DataTable } from "@dynatrace/strato-components-preview/tables";
 
 export type TeamsErrorRow = {
-  timestamp: string | number;
+  timestampText: string;
   serviceName: string;
   team: string;
   content: string;
 };
 
-function formatTs(ts: string | number) {
-  const d = new Date(ts);
-  return Number.isNaN(d.getTime()) ? String(ts) : d.toLocaleString();
-}
+
 
 export function TeamsErrorsTable({ rows }: { rows: TeamsErrorRow[] }) {
   const columns = useMemo((): DataTableColumnDef<TeamsErrorRow, unknown>[] => {
@@ -20,10 +17,9 @@ export function TeamsErrorsTable({ rows }: { rows: TeamsErrorRow[] }) {
       {
         id: "timestamp",
         header: "Timestamp",
-        accessor: "timestamp",
+        accessor: "timestampText",
         columnType: "text",
         width: "content",
-        cell: ({ rowData }) => <span>{formatTs(rowData.timestamp)}</span>,
       },
       {
         id: "service",

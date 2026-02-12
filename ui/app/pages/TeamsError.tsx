@@ -13,7 +13,10 @@ type RawDqlRecord = {
   "service.name"?: string;
 };
 
-
+function formatTs(ts: string | number) {
+  const d = new Date(ts);
+  return Number.isNaN(d.getTime()) ? String(ts) : d.toLocaleString();
+}
 
 export default function TeamsError() {
   const result = useDql({ query: teamsErrorsQuery });
@@ -21,7 +24,7 @@ export default function TeamsError() {
   const rowsAll = useMemo((): TeamsErrorRow[] => {
     const records = (result.data?.records ?? []) as RawDqlRecord[];
     return records.map((r) => ({
-      timestamp: r.timestamp,
+      timestampText: formatTs(r.timestamp),
       content: r.content ?? "",
       team: r.team ?? "",
       serviceName: r["service.name"] ?? "",
