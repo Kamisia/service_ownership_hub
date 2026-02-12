@@ -1,49 +1,89 @@
-# Getting Started with your Dynatrace App
+![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)
+![React](https://img.shields.io/badge/React-18+-61dafb)
+![Tailwind](https://img.shields.io/badge/TailwindCSS-Enabled-38bdf8)
 
-This project was bootstrapped with Dynatrace App Toolkit.
+# Service Ownership Hub
 
-It uses React in combination with TypeScript, to provide great developer experience.
+A small Dynatrace app for managing service ownership and visualizing error logs mapped to responsible teams.
 
-## Available Scripts
+The application allows defining teams and associated services, then correlating runtime log data (via DQL queries) with ownership information.
 
-In the project directory, you can run:
+The main goal of this project was to build a clean, structured Dynatrace application focusing on:
 
-### `npm run start`
+- clear UI structure
+- consistent component design
+- pragmatic state management
+- realistic platform integration (DQL, Strato components)
 
-Runs the app in the development mode. A new browser window with your running app will be automatically opened.
+---
 
-Edit a component file in `ui` and save it. The page will reload when you make changes. You may also see any errors in the console.
+## Features
 
-### `npm run build`
+- Team management (create, edit, delete)
+- Assign services to teams
+- Persistent data using localStorage
+- Error logs visualization using Dynatrace Query Language (DQL)
+- Lookup-based team mapping inside queries
+- Responsive UI using Strato components
+- DataTable-based structured views
 
-Builds the app for production to the `dist` folder. It correctly bundles your app in production mode and optimizes the build for the best performance.
+---
 
-### `npm run deploy`
+## Technical Highlights
 
-Builds the app and deploys it to the specified environment in `app.config.json`.
+- TypeScript-first approach with explicit domain models
+- Clean separation between pages, components and utilities
+- Minimal state management using useReducer
+- DRY UI structure via shared layout patterns
+- Dynatrace SDK integration (`useDql`)
+- Consistent table layouts across application views
+- Pragmatic architecture suitable for small-scale projects
 
-### `npm run uninstall
+---
 
-Uninstalls the app from the specified environment in `app.config.json`.
+## Tech Stack
 
-### `npm run generate:function`
+- React
+- TypeScript
+- Dynatrace App Platform
+- Dynatrace Query Language (DQL)
+- Strato Components
 
-Generates a new serverless function for your app in the `api` folder.
+---
 
-### `npm run update`
+## Data Flow
 
-Updates @dynatrace-scoped packages to the latest version and applies automatic migrations.
+1. Teams and services are managed locally and persisted via localStorage.
+2. DQL query fetches ERROR logs from Dynatrace Grail.
+3. Lookup logic maps services to teams.
+4. Results are rendered using DataTable components.
 
-### `npm run info`
+---
 
-Outputs the CLI and environment information.
+## Getting Started
 
-### `npm run help`
+Install dependencies:
 
-Outputs help for the Dynatrace App Toolkit.
+```bash
+npm install
+```
 
-## Learn more
+Run development server:
 
-You can find more information on how to use all the features of the new Dynatrace Platform in [Dynatrace Developer](https://dt-url.net/developers).
+```bash
+dt-app dev
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
+
+## Future Improvements
+
+- Replace localStorage with Dynatrace App State (when IAM permissions available)
+
+---
+
+## Author
+
+ [Kamila Samczuk](https://github.com/Kamisia).
+
+
