@@ -9,8 +9,6 @@ export type TeamsErrorRow = {
   content: string;
 };
 
-
-
 export function TeamsErrorsTable({ rows }: { rows: TeamsErrorRow[] }) {
   const columns = useMemo((): DataTableColumnDef<TeamsErrorRow, unknown>[] => {
     return [

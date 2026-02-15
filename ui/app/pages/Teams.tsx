@@ -1,135 +1,69 @@
-import React, {  useEffect, useMemo, useReducer, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@dynatrace/strato-components/buttons";
 
-import type { Team, TeamId } from "../utils/teams";
-import { makeId, now, teamsReducer } from "../utils/teams";
+import { Skeleton } from "@dynatrace/strato-components/content";
+import { useTeamsQuery } from "app/hooks/teams-hooks";
 
-import { TeamsTable } from "../components/teams/TeamsTable";
-import { CreateTeamModal } from "../components/teams/CreateTeamModal";
-import { EditTeamModal } from "../components/teams/EditTeamModal";
-import { DeleteTeamModal } from "../components/teams/DeleteTeamModal";
-import { PageSection } from "../components/layout/PageSection";
-
-const TEAMS_STATE_VERSION = "1";
-const TEAMS_LOCAL_STORAGE_KEY = "service_ownership_hub/teams";
+import { TeamsTable } from "app/components/teams/TeamsTable";
+import { CreateTeamModal } from "app/components/teams/CreateTeamModal";
+import { EditTeamModal } from "app/components/teams/EditTeamModal";
+import { DeleteTeamModal } from "app/components/teams/DeleteTeamModal";
+import { PageSection } from "app/components/layout/PageSection";
+import { TeamId } from "app/utils/teams";
 
 export default function Teams() {
-
-
-
-
-const [teams, dispatch] = useReducer(teamsReducer, [], () => {
-  try {
-    const raw = localStorage.getItem(TEAMS_LOCAL_STORAGE_KEY);
-    if (!raw) return [];
-
-    const parsed = JSON.parse(raw) as { version?: string; teams?: Team[] };
-    return Array.isArray(parsed?.teams) ? parsed.teams : [];
-  } catch (e) {
-    console.warn("Failed to load teams from localStorage:", e);
-    return [];
-  }
-});
-
-
-useEffect(() => {
-  const handle = setTimeout(() => {
-    try {
-      localStorage.setItem(
-        TEAMS_LOCAL_STORAGE_KEY,
-        JSON.stringify({ version: TEAMS_STATE_VERSION, teams })
-      );
-    } catch (e) {
-      console.error("Failed to persist teams to localStorage:", e);
-    }
-  }, 400);
-
-  return () => clearTimeout(handle);
-}, [teams]);
-
+  const { data: teams, isLoading } = useTeamsQuery();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editId, setEditId] = useState<TeamId | null>(null);
   const [deleteId, setDeleteId] = useState<TeamId | null>(null);
 
   const editingTeam = useMemo(
-    () => teams.find((t) => t.id === editId) ?? null,
-    [teams, editId]
-  );
-  const deletingTeam = useMemo(
-    () => teams.find((t) => t.id === deleteId) ?? null,
-    [teams, deleteId]
+    () => teams?.find((t) => t.id === editId) ?? null,
+    [teams, editId],
   );
 
   const otherTeamNames = useMemo(
-    () => teams.filter((t) => t.id !== editId).map((t) => t.name),
-    [teams, editId]
+    () => teams?.filter((t) => t.id !== editId).map((t) => t.name) ?? [],
+    [teams, editId],
   );
 
-  return (
-    <PageSection
-    title="Teams"
-    description="Manage team ownership and associated services."
-    right={<Button onClick={() => setCreateOpen(true)}>Add team +</Button>}
-  >
-     
+  return isLoading ? (
+    <Skeleton />
+  ) : (
+    teams && (
+      <PageSection
+        title="Teams"
+        description="Manage team ownership and associated services."
+        right={<Button onClick={() => setCreateOpen(true)}>Add team +</Button>}
+      >
         <TeamsTable
           teams={teams}
           onEdit={(id) => setEditId(id)}
           onDelete={(id) => setDeleteId(id)}
         />
-      
 
-      <CreateTeamModal
-        show={createOpen}
-        existing={teams.map((t) => t.name)}
-        onDismiss={() => setCreateOpen(false)}
-        onCreate={(name, services) => {
-          const team: Team = {
-            id: makeId(),
-            name,
-            services,
-            createdAt: now(),
-            updatedAt: now(),
-          };
-          dispatch({ type: "TEAM_ADD", team });
-          setCreateOpen(false);
-        }}
-      />
+        {createOpen && (
+          <CreateTeamModal
+            existingTeams={teams.map((team) => team.name)}
+            closeDialog={() => setCreateOpen(false)}
+          />
+        )}
 
-            <EditTeamModal
-        show={!!editingTeam}
-        team={editingTeam}
-        existing={otherTeamNames}
-        onDismiss={() => setEditId(null)}
-        onSave={(name, services) => {
-            if (!editingTeam) return;
-
-            dispatch({
-              type: "TEAM_UPDATE",
-              teamId: editingTeam.id,
-              name,
-              services,
-            });
-
-            setEditId(null);
-          }}
-
-      />
-      <DeleteTeamModal
-        show={!!deletingTeam}
-        team={deletingTeam}
-        onDismiss={() => setDeleteId(null)}
-        onConfirm={() => {
-           if (!deletingTeam) return;
-           dispatch({
-             type: "TEAM_DELETE",
-             teamId: deletingTeam.id,
-        });
-
-        setDeleteId(null);
-        }}
-      />
-   </PageSection>
+        {editingTeam && (
+          <EditTeamModal
+            team={editingTeam}
+            existingTeams={otherTeamNames}
+            closeDialog={() => setEditId(null)}
+          />
+        )}
+        {deleteId && (
+          <DeleteTeamModal
+            deleteId={deleteId}
+            closeDialog={() => setDeleteId(null)}
+          />
+        )}
+      </PageSection>
+    )
   );
 }

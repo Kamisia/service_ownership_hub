@@ -5,14 +5,7 @@ import type { DataTableColumnDef, DataTableCustomCell } from "@dynatrace/strato-
 
 import { Button } from "@dynatrace/strato-components/buttons";
 import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
-
-type TeamId = string;
-
-export interface Team {
-  id: TeamId;
-  name: string;
-  services: { id: string; name: string }[];
-}
+import { Team, TeamId } from "app/utils/teams";
 
 interface TeamsTableProps {
   teams: Team[];
@@ -22,7 +15,7 @@ interface TeamsTableProps {
 
 
 export function TeamsTable({ teams,  onEdit, onDelete }: TeamsTableProps) {
-  const servicesCell = useCallback<DataTableCustomCell<Team, unknown>>(
+  const servicesCell = useCallback<DataTableCustomCell<Team, undefined>>(
   ({ rowData }) => (
     <div style={{ display: "flex", alignItems: "center", height: "100%", minHeight: 32 }}>
       <div style={{ minWidth: 0 }}>
@@ -31,7 +24,7 @@ export function TeamsTable({ teams,  onEdit, onDelete }: TeamsTableProps) {
         ) : (
           <ChipGroup>
             {rowData.services.map((s) => (
-              <Chip key={s.id}>{s.name}</Chip>
+              <Chip key={s}>{s}</Chip>
             ))}
           </ChipGroup>
         )}

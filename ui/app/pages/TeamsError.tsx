@@ -1,10 +1,13 @@
 import React, { useMemo, useState } from "react";
 import { useDql } from "@dynatrace-sdk/react-hooks";
 import { Button } from "@dynatrace/strato-components/buttons";
-
-import { teamsErrorsQuery } from "../dql/teamsErrorsQuery";
-import { TeamsErrorsTable, type TeamsErrorRow } from "../components/teamsErrors/TeamsErrorsTable";
-import { PageSection } from "../components/layout/PageSection";
+import { buildQuery } from "../dql/teamsErrorsQuery";
+import { formatTs, parseTeamsMap } from "../dql/teamsErrorsUtils";
+import {
+  TeamsErrorsTable,
+  type TeamsErrorRow,
+} from "../components/teamsErrors/TeamsErrorsTable";
+import { useTeamsQuery } from "app/hooks/teams-hooks";
 
 type RawDqlRecord = {
   timestamp: string | number;
@@ -13,16 +16,20 @@ type RawDqlRecord = {
   "service.name"?: string;
 };
 
-function formatTs(ts: string | number) {
-  const d = new Date(ts);
-  return Number.isNaN(d.getTime()) ? String(ts) : d.toLocaleString();
-}
-
 export default function TeamsError() {
-  const result = useDql({ query: teamsErrorsQuery });
+  const [q, setQ] = useState("");
+  const { data: teams } = useTeamsQuery();
+
+  const query = useMemo(() => {
+    const recordsString = parseTeamsMap(teams);
+    return buildQuery(recordsString);
+  }, [teams]);
+
+  const result = useDql({ query });
 
   const rowsAll = useMemo((): TeamsErrorRow[] => {
     const records = (result.data?.records ?? []) as RawDqlRecord[];
+
     return records.map((r) => ({
       timestampText: formatTs(r.timestamp),
       content: r.content ?? "",
@@ -31,28 +38,39 @@ export default function TeamsError() {
     }));
   }, [result.data]);
 
-
-  const [q, setQ] = useState("");
   const rows = useMemo(() => {
-    const query = q.trim().toLowerCase();
-    if (!query) return rowsAll;
+    const queryText = q.trim().toLowerCase();
+    if (!queryText) return rowsAll;
 
     return rowsAll.filter((r) => {
       return (
-        r.serviceName.toLowerCase().includes(query) ||
-        r.team.toLowerCase().includes(query) ||
-        r.content.toLowerCase().includes(query)
+        r.serviceName.toLowerCase().includes(queryText) ||
+        r.team.toLowerCase().includes(queryText) ||
+        r.content.toLowerCase().includes(queryText)
       );
     });
   }, [rowsAll, q]);
 
   return (
-    <PageSection
-    title="Teams errors"
-    description="Latest ERROR logs with service name and team mapping."
-    right={
-      <>
-        <input
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <div>
+          <h2 style={{ margin: 0 }}>Teams errors</h2>
+          <p style={{ margin: "6px 0 0", opacity: 0.75 }}>
+            ERROR logs enriched with ownership based on your Teams
+            configuration.
+          </p>
+        </div>
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Filter by service, team, content…"
@@ -64,54 +82,29 @@ export default function TeamsError() {
               outline: "none",
             }}
           />
-<Button
-             onClick={() => {
-               void result.refetch?.().catch((e) => console.error("Refetch failed:", e));
-             }}
-             disabled={result.isLoading}
+          <Button
+            onClick={() => {
+              // setRefreshKey((k) => k + 1);
+              void result
+                .refetch?.()
+                .catch((e) => console.error("Refetch failed:", e));
+            }}
+            disabled={result.isLoading}
           >
-                Refresh
-          </Button>      </>
-    }
-  >
-   
+            Refresh
+          </Button>
+        </div>
+      </div>
 
-      {result.isLoading && (
-        <>
-        <div style={{ fontWeight: 600 }}>Loading…</div>
-        <div style={{ marginTop: 6, opacity: 0.75 }}>Querying logs via DQL.</div>
-        </>
-      )}
+      {result.isLoading && <div>Loading…</div>}
 
       {result.error && (
-        <>
-          <div style={{ fontWeight: 600, color: "crimson" }}>Couldn’t load data</div>
-          <div style={{ marginTop: 6, opacity: 0.85 }}>
-            {String(result.error)}
-          </div>
-        </>
+        <div style={{ color: "crimson" }}>
+          Failed to load logs: {String(result.error)}
+        </div>
       )}
 
-      {!result.isLoading && !result.error && rows.length === 0 && (
-        <>
-          <div style={{ fontWeight: 600 }}>No results</div>
-          <div style={{ marginTop: 6, opacity: 0.75 }}>
-            Either there are no ERROR logs matching the filters or <code>service.name</code> is missing.
-          </div>
-        </>
-      )}
-
-      {!result.isLoading && !result.error && rows.length > 0 && (
-        <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-            <div style={{ fontWeight: 600 }}>Results</div>
-            <div style={{ opacity: 0.75 }}>{rows.length} rows</div>
-          </div>
-         
-            <TeamsErrorsTable rows={rows} />
-          
-        </>
-      )}
-    </PageSection>
+      {!result.isLoading && !result.error && <TeamsErrorsTable rows={rows} />}
+    </div>
   );
 }

@@ -76,7 +76,7 @@ export default defineConfig([
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        project: "./tsconfig.eslint.json",
+        project: "./ui/tsconfig.eslint.json",
       },
     },
     plugins: {
@@ -129,7 +129,7 @@ export default defineConfig([
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        project: "./tsconfig.eslint.json",
+        project: "./ui/tsconfig.eslint.json",
       },
     },
     plugins: {

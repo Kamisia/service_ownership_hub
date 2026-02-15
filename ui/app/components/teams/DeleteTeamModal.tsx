@@ -2,28 +2,27 @@ import React from "react";
 import { Modal } from "@dynatrace/strato-components-preview/overlays";
 import { Button } from "@dynatrace/strato-components/buttons";
 
-import type { Team } from "../../utils/teams";
+import { useTeamDeleteMutation } from "../../hooks/teams-hooks";
 
 interface Props {
-  show: boolean;
-  team: Team | null;
-  onDismiss: () => void;
-  onConfirm: () => void;
+  deleteId: string;
+  closeDialog: () => void;
 }
 
-export function DeleteTeamModal({ show, team, onDismiss, onConfirm }: Props) {
-  if (!team) return null;
-
+export function DeleteTeamModal({ deleteId, closeDialog }: Props) {
+  const { mutate: deleteTeam } = useTeamDeleteMutation();
+  const onDelete = () => {
+    deleteTeam(deleteId);
+    closeDialog();
+  };
   return (
-    <Modal title="Delete team" show={show} onDismiss={onDismiss}>
+    <Modal title="Delete team" show={true} onDismiss={closeDialog}>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div>
-          Are you sure you want to delete team <b>{team.name}</b>?
-        </div>
+        <div>Are you sure you want to delete team?</div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <Button onClick={onDismiss}>Cancel</Button>
-          <Button onClick={onConfirm}>Delete</Button>
+          <Button onClick={closeDialog}>Cancel</Button>
+          <Button onClick={onDelete}>Delete</Button>
         </div>
       </div>
     </Modal>

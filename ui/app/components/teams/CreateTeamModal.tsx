@@ -1,49 +1,66 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import { Modal } from "@dynatrace/strato-components-preview/overlays";
-import { TextInput, FormField, Label } from "@dynatrace/strato-components-preview/forms";
+import {
+  TextInput,
+  FormField,
+  Label,
+} from "@dynatrace/strato-components-preview/forms";
 import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
 import { Button } from "@dynatrace/strato-components/buttons";
 
-import type { Service } from "../../utils/teams";
-import { addServiceUnique, isTeamNameTaken, normalize, removeService } from "../../utils/teams";
+import {
+  addServiceUnique,
+  isTeamNameTaken,
+  makeId,
+  normalize,
+  now,
+  Team,
+} from "app/utils/teams";
+import { useTeamCreationMutation } from "app/hooks/teams-hooks";
 
 interface CreateTeamModalProps {
-  show: boolean;
-  existing: string[];
-  onDismiss: () => void;
-  onCreate: (name: string, services: Service[]) => void;
+  existingTeams: string[];
+  closeDialog: () => void;
 }
 
-export function CreateTeamModal({ show, existing, onDismiss, onCreate }: CreateTeamModalProps) {
+export function CreateTeamModal({
+  existingTeams: existing,
+  closeDialog: closeDialog,
+}: CreateTeamModalProps) {
   const [name, setName] = useState<string>("");
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices] = useState<string[]>([]);
   const [newService, setNewService] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!show) return;
-    setName("");
-    setServices([]);
-    setNewService("");
-    setError(null);
-  }, [show]);
-
+  const { mutate: createTeam } = useTeamCreationMutation();
   const submit = () => {
     const n = normalize(name);
     if (!n) return setError("Team name is required.");
-    if (isTeamNameTaken(existing, n)) return setError("Team name must be unique.");
+    if (isTeamNameTaken(existing, n))
+      return setError("Team name must be unique.");
 
-    setError(null);
-    onCreate(n, services);
+    const team: Team = {
+      id: makeId(),
+      name,
+      services,
+      createdAt: now(),
+      updatedAt: now(),
+    };
+
+    createTeam(team);
+    closeDialog();
   };
 
   return (
-    <Modal title="Add team" show={show} onDismiss={onDismiss}>
+    <Modal title="Add team" show={true} onDismiss={closeDialog}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <FormField>
           <Label>Team name</Label>
-          <TextInput value={name} onChange={setName} placeholder="e.g. Platform Team" />
+          <TextInput
+            value={name}
+            onChange={setName}
+            placeholder="e.g. Platform Team"
+          />
         </FormField>
 
         <div style={{ fontWeight: 600 }}>Services</div>
@@ -52,20 +69,34 @@ export function CreateTeamModal({ show, existing, onDismiss, onCreate }: CreateT
           <div style={{ opacity: 0.7 }}>No services added yet.</div>
         ) : (
           <ChipGroup>
-            {services.map((s) => (
-              <Chip key={s.id}>
-                {s.name}
-                <Chip.DeleteButton onClick={() => setServices((p) => removeService(p, s.id))} />
+            {services.map((service) => (
+              <Chip key={service}>
+                {service}
+                <Chip.DeleteButton
+                  onClick={() =>
+                    setServices(
+                      services.filter(
+                        (checkedService) => checkedService !== service,
+                      ),
+                    )
+                  }
+                />
               </Chip>
             ))}
           </ChipGroup>
         )}
 
         <div style={{ display: "flex", gap: 8 }}>
-          <TextInput value={newService} onChange={setNewService} placeholder="e.g. auth-service" />
+          <TextInput
+            value={newService}
+            onChange={setNewService}
+            placeholder="e.g. auth-service"
+          />
           <Button
             onClick={() => {
-              setServices((p) => addServiceUnique(p, newService));
+              setServices((previousServices) =>
+                addServiceUnique(previousServices, newService),
+              );
               setNewService("");
             }}
             disabled={!normalize(newService)}
@@ -77,7 +108,7 @@ export function CreateTeamModal({ show, existing, onDismiss, onCreate }: CreateT
         {error && <div style={{ color: "crimson" }}>{error}</div>}
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <Button onClick={onDismiss}>Cancel</Button>
+          <Button onClick={closeDialog}>Cancel</Button>
           <Button onClick={submit}>Create</Button>
         </div>
       </div>

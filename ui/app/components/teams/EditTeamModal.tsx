@@ -1,54 +1,82 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import { Modal } from "@dynatrace/strato-components-preview/overlays";
-import { TextInput, FormField, Label } from "@dynatrace/strato-components-preview/forms";
+import {
+  TextInput,
+  FormField,
+  Label,
+} from "@dynatrace/strato-components-preview/forms";
 import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
 import { Button } from "@dynatrace/strato-components/buttons";
 
-import type { Service, Team } from "../../utils/teams";
-import { addServiceUnique, isTeamNameTaken, normalize, removeService } from "../../utils/teams";
+import type { Team } from "../../utils/teams";
+import { isTeamNameTaken, normalize, now } from "../../utils/teams";
+import { useTeamUpdateMutation } from "app/hooks/teams-hooks";
 
 interface EditTeamModalProps {
-  show: boolean;
-  team: Team | null;
+  team: Team;
 
-  existing: string[];
+  existingTeams: string[];
 
-  onDismiss: () => void;
-  onSave: (name: string, services: Service[]) => void;
+  closeDialog: () => void;
 }
 
-export function EditTeamModal({ show, team, existing, onDismiss, onSave }: EditTeamModalProps) {
-  const [name, setName] = useState<string>("");
-  const [services, setServices] = useState<Service[]>([]);
+export function EditTeamModal({
+  team,
+  existingTeams: existing,
+  closeDialog,
+}: EditTeamModalProps) {
+  const [name, setName] = useState<string>(team.name);
+  const [services, setServices] = useState<string[]>(team.services);
   const [newService, setNewService] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const { mutate: updateTeam } = useTeamUpdateMutation();
 
-  useEffect(() => {
-    if (!show || !team) return;
-    setName(team.name);
-    setServices(team.services.map((s) => ({ ...s })));
+  const onSave = () => {
+    updateTeam({
+      ...team,
+      name,
+      services,
+      updatedAt: now(),
+    });
+    closeDialog();
+  };
+  const addService = () => {
+    const s = normalize(newService);
+    if (!s) return;
+
+    setServices((prev) => (prev.includes(s) ? prev : [...prev, s]));
     setNewService("");
-    setError(null);
-  }, [show, team]);
+  };
 
-  if (!team) return null;
+  const removeService = (serviceName: string) => {
+    setServices((prev) => prev.filter((x) => x !== serviceName));
+  };
 
   const submit = () => {
     const n = normalize(name);
     if (!n) return setError("Team name is required.");
-    if (isTeamNameTaken(existing, n)) return setError("Team name must be unique.");
+    if (isTeamNameTaken(existing, n))
+      return setError("Team name must be unique.");
 
     setError(null);
-    onSave(n, services);
+    onSave();
   };
 
   return (
-    <Modal title={`Edit team: ${team.name}`} show={show} onDismiss={onDismiss}>
+    <Modal
+      title={`Edit team: ${team.name}`}
+      show={true}
+      onDismiss={closeDialog}
+    >
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <FormField>
           <Label>Team name</Label>
-          <TextInput value={name} onChange={setName} placeholder="e.g. Platform Team" />
+          <TextInput
+            value={name}
+            onChange={setName}
+            placeholder="e.g. Platform Team"
+          />
         </FormField>
 
         <div style={{ fontWeight: 600 }}>Services</div>
@@ -58,23 +86,21 @@ export function EditTeamModal({ show, team, existing, onDismiss, onSave }: EditT
         ) : (
           <ChipGroup>
             {services.map((s) => (
-              <Chip key={s.id}>
-                {s.name}
-                <Chip.DeleteButton onClick={() => setServices((p) => removeService(p, s.id))} />
+              <Chip key={s}>
+                {s}
+                <Chip.DeleteButton onClick={() => removeService(s)} />
               </Chip>
             ))}
           </ChipGroup>
         )}
 
         <div style={{ display: "flex", gap: 8 }}>
-          <TextInput value={newService} onChange={setNewService} placeholder="e.g. payments-api" />
-          <Button
-            onClick={() => {
-              setServices((p) => addServiceUnique(p, newService));
-              setNewService("");
-            }}
-            disabled={!normalize(newService)}
-          >
+          <TextInput
+            value={newService}
+            onChange={setNewService}
+            placeholder="e.g. payments-api"
+          />
+          <Button onClick={addService} disabled={!normalize(newService)}>
             Add
           </Button>
         </div>
@@ -82,7 +108,7 @@ export function EditTeamModal({ show, team, existing, onDismiss, onSave }: EditT
         {error && <div style={{ color: "crimson" }}>{error}</div>}
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <Button onClick={onDismiss}>Cancel</Button>
+          <Button onClick={closeDialog}>Cancel</Button>
           <Button onClick={submit}>Save</Button>
         </div>
       </div>

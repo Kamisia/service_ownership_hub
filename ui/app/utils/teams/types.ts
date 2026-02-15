@@ -1,17 +1,17 @@
 export type TeamId = string;
 export type ServiceId = string;
 
-export interface Service {
+export class Service {
   id: ServiceId;
   name: string;
   createdAt: string;
   updatedAt?: string;
 }
 
-export interface Team {
+export class Team {
   id: TeamId;
   name: string;
-  services: Service[];
+  services: string[];
   createdAt: string;
   updatedAt?: string;
 }

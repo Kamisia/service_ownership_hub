@@ -20,7 +20,7 @@
     "strictNullChecks": true,
     "target": "ESNext",
     "types": ["node"],
-    "typeRoots": ["./node_modules/@types", "./node_modules/@dynatrace"]
+    "typeRoots": ["../node_modules/@types", "../node_modules/@dynatrace"]
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "dist"]
