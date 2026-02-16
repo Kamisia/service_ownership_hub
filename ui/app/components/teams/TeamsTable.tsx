@@ -5,7 +5,7 @@ import type { DataTableColumnDef, DataTableCustomCell } from "@dynatrace/strato-
 
 import { Button } from "@dynatrace/strato-components/buttons";
 import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
-import { Team } from "app/utils/teams";
+import { Team } from "app/utils/teams/types";
 
 interface TeamsTableProps {
   teams: Team[];

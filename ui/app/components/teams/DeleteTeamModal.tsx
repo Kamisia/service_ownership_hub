@@ -2,7 +2,7 @@ import React from "react";
 import { Modal } from "@dynatrace/strato-components-preview/overlays";
 import { Button } from "@dynatrace/strato-components/buttons";
 import { useDeleteSettingsV2 } from "@dynatrace-sdk/react-hooks";
-import { Team } from "app/utils/teams";
+import { Team } from "app/utils/teams/types";
 
 interface Props {
   team: Team;

@@ -8,10 +8,11 @@ import { CreateTeamModal } from "app/components/teams/CreateTeamModal";
 import { EditTeamModal } from "app/components/teams/EditTeamModal";
 import { DeleteTeamModal } from "app/components/teams/DeleteTeamModal";
 import { PageSection } from "app/components/layout/PageSection";
-import { mapAppSettingsObjectToTeam, Team } from "app/utils/teams";
+import { Team } from "app/utils/teams/types";
 import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
+import { mapAppSettingsObjectToTeam } from "app/utils/teams/helpers";
 
-export default function Teams() {
+export default function TeamsPage() {
   const { data, isLoading, refetch } = useSettingsObjectsV2({
     schemaId: TEAMS_SCHEMA_ID,
     addFields: "value",

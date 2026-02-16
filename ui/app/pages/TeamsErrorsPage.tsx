@@ -17,7 +17,7 @@ type RawDqlRecord = {
   "service.name"?: string;
 };
 
-export default function TeamsError() {
+export default function TeamsErrorPage() {
   const [q, setQ] = useState("");
   const { data } = useSettingsObjectsV2({
     schemaId: TEAMS_SCHEMA_ID,

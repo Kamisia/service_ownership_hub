@@ -9,13 +9,9 @@ import {
 import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
 import { Button } from "@dynatrace/strato-components/buttons";
 import { useCreateSettingsV2 } from '@dynatrace-sdk/react-hooks';
-import {
-  addServiceUnique,
-  isTeamNameTaken,
-  normalize,
-  Team
-} from "app/utils/teams";
 import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
+import { Team } from "app/utils/teams/types";
+import { addServiceUnique, isTeamNameTaken, normalize } from "app/utils/teams/helpers";
 interface CreateTeamModalProps {
   existingTeams: Team[];
   closeDialog: () => void;

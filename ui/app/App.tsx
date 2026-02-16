@@ -1,9 +1,9 @@
 import { Page } from "@dynatrace/strato-components-preview/layouts";
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import TeamsError from "./pages/TeamsError";
+import TeamsErrorPage from "./pages/TeamsErrorsPage";
 import { Header } from "./components/Header";
-import Teams from "./pages/Teams";
+import TeamsPage from "./pages/TeamsPage";
 export const App = () => {
   return (
     <Page>
@@ -12,8 +12,8 @@ export const App = () => {
       </Page.Header>
       <Page.Main>
         <Routes>
-          <Route path="/" element={<Teams />} />
-          <Route path="/data" element={<TeamsError />} />
+          <Route path="/" element={<TeamsPage />} />
+          <Route path="/data" element={<TeamsErrorPage />} />
         </Routes>
       </Page.Main>
     </Page>

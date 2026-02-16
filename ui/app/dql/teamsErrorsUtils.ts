@@ -1,7 +1,4 @@
-import type { Team } from "../utils/teams";
-// import { useEffect, useState } from "react";
-const TEAMS_LOCAL_STORAGE_KEY = "service_ownership_hub/teams";
-
+import type { Team } from "app/utils/teams/types";
 
 export function formatTs(ts: string | number) {
   const d = new Date(ts);
@@ -10,21 +7,6 @@ export function formatTs(ts: string | number) {
 
 export function escapeDqlString(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, " ");
-}
-
-export function loadTeamsFromLocalStorage(): Team[] {
-
-  try {
-    const raw = localStorage.getItem(TEAMS_LOCAL_STORAGE_KEY);
-    if (!raw) return [];
-
-    const parsed = JSON.parse(raw) as { teams?: Team[] };
-
-    return Array.isArray(parsed?.teams) ? parsed.teams : [];
-  } catch (e) {
-    console.warn("Failed to load teams from localStorage:", e);
-    return [];
-  }
 }
 
 export function parseTeamsMap(teams: Team[] | undefined): string {
@@ -56,24 +38,4 @@ export function parseTeamsMap(teams: Team[] | undefined): string {
         `record(service.name = "${escapeDqlString(serviceName)}", team = "${escapeDqlString(teamName)}")`
     )
     .join(",\n");
-}
-
-
-
-export function useTeamsFromLocalStorage() {
-//   const [version, setVersion] = useState(0);
-
-//   useEffect(() => {
-//     function onStorage(e: StorageEvent) {
-//       if (e.key === "service_ownership_hub/teams") {
-//         setVersion((v) => v + 1);
-//       }
-//     }
-
-//     window.addEventListener("storage", onStorage);
-
-//     return () => window.removeEventListener("storage", onStorage);
-//   }, []);
-
-  return loadTeamsFromLocalStorage();
 }

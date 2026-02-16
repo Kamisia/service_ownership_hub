@@ -9,8 +9,8 @@ import {
 import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
 import { Button } from "@dynatrace/strato-components/buttons";
 
-import type { Team } from "../../utils/teams";
-import { isTeamNameTaken, mapTeamToUpdateSettingsParamsV2, normalize } from "../../utils/teams";
+import type { Team } from "app/utils/teams/types";
+import { isTeamNameTaken, mapTeamToUpdateSettingsParamsV2, normalize } from "app/utils/teams/helpers";
 import { useUpdateSettingsV2 } from "@dynatrace-sdk/react-hooks";
 
 interface EditTeamModalProps {
