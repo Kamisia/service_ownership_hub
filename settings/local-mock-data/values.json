@@ -1,0 +1,35 @@
+[
+  {
+    "schemaId": "teams",
+    "value": {
+      "id": "test1",
+      "name": "team alpha",
+      "services": ["test123", "cartservice"]
+    },
+    "schemaVersion": "1",
+    "summary": "Test1 team",
+    "searchSummary": "Service ownership Hub - teams"
+  },
+  {
+    "schemaId": "teams",
+    "value": {
+      "id": "dynatrace",
+      "name": "team Dynatrace",
+      "services": ["Dynatrace-app"]
+    },
+    "schemaVersion": "1",
+    "summary": "team Dynatrace team",
+    "searchSummary": "Service ownership Hub - teams"
+  },
+  {
+    "schemaId": "test",
+    "value": {
+      "id": "dynatrace",
+      "name": "team Dynatrace",
+      "services": ["Dynatrace-app"]
+    },
+    "schemaVersion": "1",
+    "summary": "team Dynatrace team",
+    "searchSummary": "Service ownership Hub - teams"
+  }
+]

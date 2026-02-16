@@ -1,0 +1,1 @@
+export const TEAMS_SCHEMA_ID = "teams";

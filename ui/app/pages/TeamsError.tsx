@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useDql } from "@dynatrace-sdk/react-hooks";
+import { useDql, useSettingsObjectsV2 } from "@dynatrace-sdk/react-hooks";
 import { Button } from "@dynatrace/strato-components/buttons";
 import { buildQuery } from "../dql/teamsErrorsQuery";
 import { formatTs, parseTeamsMap } from "../dql/teamsErrorsUtils";
@@ -7,7 +7,8 @@ import {
   TeamsErrorsTable,
   type TeamsErrorRow,
 } from "../components/teamsErrors/TeamsErrorsTable";
-import { useTeamsQuery } from "app/hooks/teams-hooks";
+import { mapAppSettingsObjectToTeam } from "app/utils/teams/helpers";
+import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
 
 type RawDqlRecord = {
   timestamp: string | number;
@@ -18,12 +19,19 @@ type RawDqlRecord = {
 
 export default function TeamsError() {
   const [q, setQ] = useState("");
-  const { data: teams } = useTeamsQuery();
+  const { data } = useSettingsObjectsV2({
+    schemaId: TEAMS_SCHEMA_ID,
+    addFields: "value",
+  });
 
   const query = useMemo(() => {
+    if (!data) {
+      return "";
+    }
+    const teams = data?.items.map(mapAppSettingsObjectToTeam);
     const recordsString = parseTeamsMap(teams);
     return buildQuery(recordsString);
-  }, [teams]);
+  }, [data]);
 
   const result = useDql({ query });
 

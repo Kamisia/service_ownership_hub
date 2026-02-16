@@ -8,47 +8,50 @@ import {
 } from "@dynatrace/strato-components-preview/forms";
 import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
 import { Button } from "@dynatrace/strato-components/buttons";
-
+import { useCreateSettingsV2 } from '@dynatrace-sdk/react-hooks';
 import {
   addServiceUnique,
   isTeamNameTaken,
-  makeId,
   normalize,
-  now,
-  Team,
+  Team
 } from "app/utils/teams";
-import { useTeamCreationMutation } from "app/hooks/teams-hooks";
-
+import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
 interface CreateTeamModalProps {
-  existingTeams: string[];
+  existingTeams: Team[];
   closeDialog: () => void;
+  afterSave: () => Promise<void>;
 }
 
 export function CreateTeamModal({
-  existingTeams: existing,
+  existingTeams,
   closeDialog: closeDialog,
+  afterSave
 }: CreateTeamModalProps) {
   const [name, setName] = useState<string>("");
   const [services, setServices] = useState<string[]>([]);
   const [newService, setNewService] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const { mutate: createTeam } = useTeamCreationMutation();
-  const submit = () => {
+  const { execute } = useCreateSettingsV2();
+  const otherTeamNames = existingTeams.map((t) => t.name);
+
+  const createTeam = async (name: string, services: string[]) => {
+    await execute({
+      body: {
+        schemaId: TEAMS_SCHEMA_ID,
+        value: {
+          name, services
+        },
+      },
+    });
+  }
+  const submit = async () => {
     const n = normalize(name);
     if (!n) return setError("Team name is required.");
-    if (isTeamNameTaken(existing, n))
+    if (isTeamNameTaken(otherTeamNames, n))
       return setError("Team name must be unique.");
 
-    const team: Team = {
-      id: makeId(),
-      name,
-      services,
-      createdAt: now(),
-      updatedAt: now(),
-    };
-
-    createTeam(team);
-    closeDialog();
+    await createTeam(name, services);
+    await afterSave();
   };
 
   return (
@@ -109,7 +112,14 @@ export function CreateTeamModal({
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
           <Button onClick={closeDialog}>Cancel</Button>
-          <Button onClick={submit}>Create</Button>
+          <Button
+            onClick={() => {
+              void submit().catch((e) => {
+                setError("Failed to create team.");
+                console.error(e);
+              });
+            }}
+          >Create</Button>
         </div>
       </div>
     </Modal>

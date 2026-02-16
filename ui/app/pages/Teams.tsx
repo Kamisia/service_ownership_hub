@@ -2,33 +2,31 @@ import React, { useMemo, useState } from "react";
 import { Button } from "@dynatrace/strato-components/buttons";
 
 import { Skeleton } from "@dynatrace/strato-components/content";
-import { useTeamsQuery } from "app/hooks/teams-hooks";
-
+import { useSettingsObjectsV2 } from "@dynatrace-sdk/react-hooks";
 import { TeamsTable } from "app/components/teams/TeamsTable";
 import { CreateTeamModal } from "app/components/teams/CreateTeamModal";
 import { EditTeamModal } from "app/components/teams/EditTeamModal";
 import { DeleteTeamModal } from "app/components/teams/DeleteTeamModal";
 import { PageSection } from "app/components/layout/PageSection";
-import { TeamId } from "app/utils/teams";
+import { mapAppSettingsObjectToTeam, Team } from "app/utils/teams";
+import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
 
 export default function Teams() {
-  const { data: teams, isLoading } = useTeamsQuery();
+  const { data, isLoading, refetch } = useSettingsObjectsV2({
+    schemaId: TEAMS_SCHEMA_ID,
+    addFields: "value",
+  });
+
+  const teams = useMemo(
+    () => data?.items.map(mapAppSettingsObjectToTeam),
+    [data],
+  );
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [editId, setEditId] = useState<TeamId | null>(null);
-  const [deleteId, setDeleteId] = useState<TeamId | null>(null);
+  const [deleteTeam, setDeleteTeam] = useState<Team>();
+  const [editTeam, setEditTeam] = useState<Team>();
 
-  const editingTeam = useMemo(
-    () => teams?.find((t) => t.id === editId) ?? null,
-    [teams, editId],
-  );
-
-  const otherTeamNames = useMemo(
-    () => teams?.filter((t) => t.id !== editId).map((t) => t.name) ?? [],
-    [teams, editId],
-  );
-
-  return isLoading ? (
+  return isLoading || !data ? (
     <Skeleton />
   ) : (
     teams && (
@@ -37,30 +35,31 @@ export default function Teams() {
         description="Manage team ownership and associated services."
         right={<Button onClick={() => setCreateOpen(true)}>Add team +</Button>}
       >
-        <TeamsTable
-          teams={teams}
-          onEdit={(id) => setEditId(id)}
-          onDelete={(id) => setDeleteId(id)}
-        />
+        <TeamsTable teams={teams} onEdit={setEditTeam} onDelete={setDeleteTeam} />
 
         {createOpen && (
           <CreateTeamModal
-            existingTeams={teams.map((team) => team.name)}
-            closeDialog={() => setCreateOpen(false)}
+            existingTeams={teams}
+            closeDialog={() => {
+              setCreateOpen(false);
+            }}
+            afterSave={() => refetch().then(() => setCreateOpen(false))}
           />
         )}
 
-        {editingTeam && (
+        {editTeam && (
           <EditTeamModal
-            team={editingTeam}
-            existingTeams={otherTeamNames}
-            closeDialog={() => setEditId(null)}
+            team={editTeam}
+            existingTeams={teams}
+            closeDialog={() => setEditTeam(undefined)}
+            afterEdit={() => refetch().then(() => setEditTeam(undefined))}
           />
         )}
-        {deleteId && (
+        {deleteTeam && (
           <DeleteTeamModal
-            deleteId={deleteId}
-            closeDialog={() => setDeleteId(null)}
+            team={deleteTeam}
+            closeDialog={() => setDeleteTeam(undefined)}
+            afterDelete={() => refetch().then(() => setDeleteTeam(undefined))}
           />
         )}
       </PageSection>

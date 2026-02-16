@@ -1,13 +1,9 @@
-export const now = () => new Date().toISOString();
+import { AppSettingsObject } from "@dynatrace-sdk/client-app-settings-v2";
+import { Team } from "./types";
+import { UpdateSettingsParamsV2 } from "@dynatrace-sdk/react-hooks";
+
 export const normalize = (s: string) => s.trim();
 export const key = (s: string) => normalize(s).toLowerCase();
-
-export const makeId = (): string =>
-  typeof crypto !== "undefined" &&
-  "randomUUID" in crypto &&
-  typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : `id_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 
 export function addServiceUnique(list: string[], name: string): string[] {
   const n = normalize(name);
@@ -17,11 +13,31 @@ export function addServiceUnique(list: string[], name: string): string[] {
   return [...list, name];
 }
 
-export function removeService(list: string[], service: string): string[] {
-  return list.filter((s) => s !== service);
-}
-
 export function isTeamNameTaken(existing: string[], name: string): boolean {
   const n = key(name);
   return existing.some((x) => key(x) === n);
+}
+
+export function mapAppSettingsObjectToTeam(source: AppSettingsObject): Team {
+  return {
+    id: source.objectId,
+    name: source.value?.name as string,
+    services: source.value?.services as string[],
+    version: source.version,
+  } as Team;
+}
+
+export function mapTeamToUpdateSettingsParamsV2(
+  source: Team,
+): UpdateSettingsParamsV2 {
+  return {
+    objectId: source.id,
+    optimisticLockingVersion: source.version,
+    body: {
+      value: {
+        name: source.name,
+        services: source.services,
+      },
+    },
+  } as UpdateSettingsParamsV2;
 }

@@ -10,37 +10,30 @@ import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
 import { Button } from "@dynatrace/strato-components/buttons";
 
 import type { Team } from "../../utils/teams";
-import { isTeamNameTaken, normalize, now } from "../../utils/teams";
-import { useTeamUpdateMutation } from "app/hooks/teams-hooks";
+import { isTeamNameTaken, mapTeamToUpdateSettingsParamsV2, normalize } from "../../utils/teams";
+import { useUpdateSettingsV2 } from "@dynatrace-sdk/react-hooks";
 
 interface EditTeamModalProps {
   team: Team;
-
-  existingTeams: string[];
-
+  existingTeams: Team[];
   closeDialog: () => void;
+  afterEdit: () => Promise<void>;
 }
 
 export function EditTeamModal({
   team,
-  existingTeams: existing,
+  existingTeams,
   closeDialog,
+  afterEdit
 }: EditTeamModalProps) {
   const [name, setName] = useState<string>(team.name);
   const [services, setServices] = useState<string[]>(team.services);
   const [newService, setNewService] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const { mutate: updateTeam } = useTeamUpdateMutation();
+  const { execute } = useUpdateSettingsV2();
 
-  const onSave = () => {
-    updateTeam({
-      ...team,
-      name,
-      services,
-      updatedAt: now(),
-    });
-    closeDialog();
-  };
+  const otherTeamNames = existingTeams?.filter((t) => t.id !== team.id).map((t) => t.name) ?? [];
+
   const addService = () => {
     const s = normalize(newService);
     if (!s) return;
@@ -53,14 +46,16 @@ export function EditTeamModal({
     setServices((prev) => prev.filter((x) => x !== serviceName));
   };
 
-  const submit = () => {
+  const onEdit = async () => {
     const n = normalize(name);
     if (!n) return setError("Team name is required.");
-    if (isTeamNameTaken(existing, n))
+    if (isTeamNameTaken(otherTeamNames, n))
       return setError("Team name must be unique.");
 
-    setError(null);
-    onSave();
+    team.name = name;
+    team.services = services;
+    await execute(mapTeamToUpdateSettingsParamsV2(team));
+    await afterEdit();
   };
 
   return (
@@ -109,7 +104,7 @@ export function EditTeamModal({
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
           <Button onClick={closeDialog}>Cancel</Button>
-          <Button onClick={submit}>Save</Button>
+          <Button onClick={() => void onEdit().then()}>Save</Button>
         </div>
       </div>
     </Modal>

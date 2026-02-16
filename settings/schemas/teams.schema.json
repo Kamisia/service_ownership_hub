@@ -1,0 +1,31 @@
+{
+  "$schema": "https://developer.dynatrace.com/docs-assets/schema_strict_apps.json",
+  "dynatrace": "1",
+  "schemaId": "teams",
+  "version": "1.0.0",
+  "displayName": "TODO teams",
+  "description": "",
+  "multiObject": true,
+  "maxObjects": 100,
+  "summaryPattern": "TODO",
+  "ordered": false,
+  "maturity": "GENERAL_AVAILABILITY",
+  "ownerBasedAccessControl": false,
+  "properties": {
+    "services": {
+      "displayName": "Services",
+      "description": "A list of services owned by the team",
+      "type": "list",
+      "items": {
+        "type": "text"
+      }
+    },
+    "name": {
+      "displayName": "Name",
+      "description": "Team name",
+      "type": "text",
+      "default": "",
+      "nullable": false
+    }
+  }
+}

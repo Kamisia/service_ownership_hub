@@ -5,12 +5,12 @@ import type { DataTableColumnDef, DataTableCustomCell } from "@dynatrace/strato-
 
 import { Button } from "@dynatrace/strato-components/buttons";
 import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
-import { Team, TeamId } from "app/utils/teams";
+import { Team } from "app/utils/teams";
 
 interface TeamsTableProps {
   teams: Team[];
-  onEdit: (teamId: TeamId) => void;
-  onDelete: (teamId: TeamId) => void;
+  onEdit: (team: Team) => void;
+  onDelete: (team: Team) => void;
 }
 
 
@@ -46,8 +46,8 @@ const actionsCell = useCallback<DataTableCustomCell<Team, unknown>>(
         minHeight: 32,
       }}
     >
-      <Button onClick={() => onEdit(rowData.id)}>Edit</Button>
-      <Button onClick={() => onDelete(rowData.id)}>Delete</Button>
+      <Button onClick={() => onEdit(rowData)}>Edit</Button>
+      <Button onClick={() => onDelete(rowData)}>Delete</Button>
     </div>
   ),
   [onEdit, onDelete]

@@ -1,0 +1,12 @@
+{
+  "teams": [
+    {
+      "permission": "app-settings:objects:read",
+      "granted": "true"
+    },
+    {
+      "permission": "app-settings:objects:write",
+      "granted": "true"
+    }
+  ]
+}

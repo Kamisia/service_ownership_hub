@@ -9,9 +9,8 @@
     "scopes": [
       { "name": "storage:logs:read", "comment": "default template" },
       { "name": "storage:buckets:read", "comment": "default template" },
-      { "name": "state:app-states:write", "comment": "test"},
-      { "name": "state:app-states:read", "comment": "test"}
-      
+      { "name": "app-settings:objects:read", "comment": "Read app settings" }
     ]
-  }
+  },
+  "plugins": ["@dynatrace-sdk/dt-app-plugin-client-app-settings-v2"]
 }
