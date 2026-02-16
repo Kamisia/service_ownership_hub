@@ -25,9 +25,6 @@ export default function TeamsErrorPage() {
   });
 
   const query = useMemo(() => {
-    if (!data) {
-      return "";
-    }
     const teams = data?.items.map(mapAppSettingsObjectToTeam);
     const recordsString = parseTeamsMap(teams);
     return buildQuery(recordsString);
