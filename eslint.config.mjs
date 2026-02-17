@@ -90,6 +90,11 @@ export default defineConfig([
       nounsanitized,
       "@microsoft/sdl": pluginMicrosoftSdl,
     },
+    settings: {
+      react: {
+        version: "detect",
+      },
+    },
     extends: [
       eslint.configs.recommended,
       tseslint.configs.recommended,
@@ -142,6 +147,11 @@ export default defineConfig([
       n,
       nounsanitized,
       "@microsoft/sdl": pluginMicrosoftSdl,
+    },
+    settings: {
+      react: {
+        version: "detect",
+      },
     },
     extends: [
       eslint.configs.recommended,

@@ -1,4 +1,4 @@
-const { stratoPreset } = require('@dynatrace/strato-components-preview-testing/jest/preset');
+﻿const { stratoPreset } = require('@dynatrace/strato-components-preview-testing/jest/preset');
 
 /** @type {import('jest').Config} */
 module.exports = {
@@ -18,5 +18,6 @@ module.exports = {
   ],
   moduleNameMapper: {
     ...stratoPreset.moduleNameMapper,
+    '^app/(.*)$': '<rootDir>/ui/app/$1',
   },
 };
