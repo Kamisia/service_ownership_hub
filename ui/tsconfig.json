@@ -7,6 +7,7 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "importHelpers": false /* Import emit helpers from 'tslib'. */,
+    "isolatedModules": true,
     "jsx": "react",
     "lib": ["DOM", "DOM.Iterable", "esnext"],
     "module": "ESNext",
@@ -18,7 +19,7 @@
     "sourceMap": true,
     "strictNullChecks": true,
     "target": "ESNext",
-    "types": ["node"],
+    "types": ["node", "@types/jest", "@testing-library/jest-dom"],
     "typeRoots": ["../node_modules/@types", "../node_modules/@dynatrace"]
   },
   "exclude": ["node_modules", "dist", "actions"]

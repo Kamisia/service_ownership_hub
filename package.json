@@ -12,7 +12,8 @@
     "update": "dt-app update",
     "info": "dt-app info",
     "help": "dt-app help",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:ui": "jest --config ui/jest.config.js"
   },
   "engines": {
     "node": ">=16.13.0"
@@ -38,9 +39,14 @@
     "react-router-dom": "^6.22.2"
   },
   "devDependencies": {
+    "@dynatrace/strato-components-preview-testing": "^2.12.2",
     "@dynatrace-sdk/dt-app-plugin-client-app-settings-v2": "^0.4.0",
     "@eslint/js": "^9.37.0",
     "@microsoft/eslint-plugin-sdl": "^1.1.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^29.5.14",
     "@types/node": "^24.7.0",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.5",
@@ -52,6 +58,10 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^6.1.1",
     "eslint-plugin-security": "^3.0.1",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.0"
   }
