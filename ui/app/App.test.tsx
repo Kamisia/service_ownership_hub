@@ -24,7 +24,7 @@ jest.mock("./pages/TeamsErrorsPage", () => ({
 }));
 
 describe("App", () => {
-  test("renders TeamsPage on route /", () => {
+  test("renders TeamsErrorsPage on route /", () => {
     render(
       <MemoryRouter initialEntries={["/"]} future={routerFuture}>
         <App />
@@ -32,17 +32,17 @@ describe("App", () => {
     );
 
     expect(screen.getByText("Mock Header")).toBeInTheDocument();
-    expect(screen.getByText("Mock Teams Page")).toBeInTheDocument();
+    expect(screen.getByText("Mock Teams Errors Page")).toBeInTheDocument();
   });
 
-  test("renders TeamsErrorsPage on route /data", () => {
+  test("renders TeamsPage on route /teams", () => {
     render(
-      <MemoryRouter initialEntries={["/data"]} future={routerFuture}>
+      <MemoryRouter initialEntries={["/teams"]} future={routerFuture}>
         <App />
       </MemoryRouter>,
     );
 
     expect(screen.getByText("Mock Header")).toBeInTheDocument();
-    expect(screen.getByText("Mock Teams Errors Page")).toBeInTheDocument();
+    expect(screen.getByText("Mock Teams Page")).toBeInTheDocument();
   });
 });

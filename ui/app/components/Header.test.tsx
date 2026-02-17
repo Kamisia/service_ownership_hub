@@ -21,23 +21,23 @@ function LocationDisplay() {
 }
 
 describe("components/Header", () => {
-  test("renders nav links to / and /data", () => {
+  test("renders nav links to / and /teams", () => {
     const { container } = render(
       <MemoryRouter initialEntries={["/"]} future={routerFuture}>
         <Header />
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Teams Error")).toBeInTheDocument();
+    expect(screen.getByText("Teams")).toBeInTheDocument();
 
     const homeLink = container.querySelector('a[href="/"]');
-    const dataLink = container.querySelector('a[href="/data"]');
+    const teamsLink = container.querySelector('a[href="/teams"]');
 
     expect(homeLink).toBeInTheDocument();
-    expect(dataLink).toBeInTheDocument();
+    expect(teamsLink).toBeInTheDocument();
   });
 
-  test("navigates to /data when Teams Error link is clicked", async () => {
+  test("navigates to /teams when Teams link is clicked", async () => {
     const user = userEvent.setup();
 
     render(
@@ -51,8 +51,8 @@ describe("components/Header", () => {
 
     expect(screen.getByTestId("location")).toHaveTextContent("/");
 
-    await user.click(screen.getByRole("link", { name: "Teams Error" }));
+    await user.click(screen.getByRole("link", { name: "Teams" }));
 
-    expect(screen.getByTestId("location")).toHaveTextContent("/data");
+    expect(screen.getByTestId("location")).toHaveTextContent("/teams");
   });
 });

@@ -12,7 +12,8 @@ export const App = () => {
       </Page.Header>
       <Page.Main>
         <Routes>
-          <Route path="/" element={<TeamsPage />} />
+          <Route path="/" element={<TeamsErrorPage />} />
+          <Route path="/teams" element={<TeamsPage />} />
           <Route path="/data" element={<TeamsErrorPage />} />
         </Routes>
       </Page.Main>
