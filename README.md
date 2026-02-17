@@ -1,89 +1,62 @@
-![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)
-![React](https://img.shields.io/badge/React-18+-61dafb)
-![Tailwind](https://img.shields.io/badge/TailwindCSS-Enabled-38bdf8)
+﻿# Service Ownership Hub
 
-# Service Ownership Hub
+Dynatrace app for mapping service ownership to teams and correlating runtime ERROR logs with responsible owners.
 
-A small Dynatrace app for managing service ownership and visualizing error logs mapped to responsible teams.
+## Business Problem & Value
 
-The application allows defining teams and associated services, then correlating runtime log data (via DQL queries) with ownership information.
+In many teams, logs show failing services but ownership is unclear.
+This app centralizes team-to-service ownership and enriches error views with ownership context, making triage faster.
 
-The main goal of this project was to build a clean, structured Dynatrace application focusing on:
-
-- clear UI structure
-- consistent component design
-- pragmatic state management
-- realistic platform integration (DQL, Strato components)
-
----
-
-## Features
+## Core Features
 
 - Team management (create, edit, delete)
-- Assign services to teams
-- Persistent data using localStorage
-- Error logs visualization using Dynatrace Query Language (DQL)
-- Lookup-based team mapping inside queries
-- Responsive UI using Strato components
-- DataTable-based structured views
+- Service assignment per team
+- Error-log overview enriched with team ownership via DQL lookup
+- Fast filtering by service, team, and log content
+- Table-driven UI with Dynatrace Strato components
 
----
+## Architecture Overview
 
-## Technical Highlights
+- Frontend: React + TypeScript
+- Platform integration:
+  - `useSettingsObjectsV2` for team configuration storage
+  - `useDql` for querying logs from Grail
+- DQL pipeline:
+  - fetch ERROR logs
+  - lookup ownership mapping (service -> team)
+  - sort and display latest results
+- UI composition:
+  - dedicated pages, modal-based CRUD, shared table patterns
 
-- TypeScript-first approach with explicit domain models
-- Clean separation between pages, components and utilities
-- Minimal state management using useReducer
-- DRY UI structure via shared layout patterns
-- Dynatrace SDK integration (`useDql`)
-- Consistent table layouts across application views
-- Pragmatic architecture suitable for small-scale projects
+## Routing
 
----
+- `/` -> Teams Errors (default landing page)
+- `/teams` -> Teams management
+- `/data` -> Teams Errors (backward-compatible alias)
 
 ## Tech Stack
 
-- React
+- React 18
 - TypeScript
-- Dynatrace App Platform
-- Dynatrace Query Language (DQL)
-- Strato Components
+- Dynatrace App Toolkit (`dt-app`)
+- Dynatrace SDK React Hooks
+- Dynatrace Strato Design System
+- Jest + Testing Library
 
----
-
-## Data Flow
-
-1. Teams and services are managed locally and persisted via localStorage.
-2. DQL query fetches ERROR logs from Dynatrace Grail.
-3. Lookup logic maps services to teams.
-4. Results are rendered using DataTable components.
-
----
-
-## Getting Started
-
-Install dependencies:
+## Run Locally
 
 ```bash
 npm install
+npm run start
 ```
 
-Run development server:
+## Testing & Quality
 
 ```bash
-dt-app dev
+npm run test:ui
+npx jest --config ui/jest.config.js --coverage
 ```
-
----
-
-## Future Improvements
-
-- Replace localStorage with Dynatrace App State (when IAM permissions available)
-
----
 
 ## Author
 
- [Kamila Samczuk](https://github.com/Kamisia).
-
-
+[Kamila Samczuk](https://github.com/Kamisia)
