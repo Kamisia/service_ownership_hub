@@ -79,4 +79,34 @@ describe("components/teams/CreateTeamModal", () => {
     });
     expect(afterSave).toHaveBeenCalledTimes(1);
   });
+
+  test("shows fallback error when create request fails", async () => {
+    const user = userEvent.setup();
+    const execute = jest.fn().mockRejectedValue(new Error("create failed"));
+    const afterSave = jest.fn().mockResolvedValue(undefined);
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    useCreateSettingsV2Mock.mockReturnValue({ execute });
+
+    render(
+      <CreateTeamModal
+        existingTeams={[]}
+        closeDialog={jest.fn()}
+        afterSave={afterSave}
+      />,
+    );
+
+    await user.type(screen.getByPlaceholderText("e.g. Platform Team"), "SRE");
+    await user.click(screen.getByRole("button", { name: "Create" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Failed to create team."),
+      ).toBeInTheDocument();
+    });
+    expect(afterSave).not.toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
 });

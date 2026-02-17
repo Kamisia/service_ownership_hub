@@ -27,6 +27,12 @@ type MockTeamsTableProps = {
 type MockCreateTeamModalProps = {
   afterSave: () => Promise<void>;
 };
+type MockEditTeamModalProps = {
+  afterEdit: () => Promise<void>;
+};
+type MockDeleteTeamModalProps = {
+  afterDelete: () => Promise<void>;
+};
 
 jest.mock("@dynatrace-sdk/react-hooks", () => ({
   useSettingsObjectsV2: jest.fn(),
@@ -66,11 +72,21 @@ jest.mock("app/components/teams/CreateTeamModal", () => ({
 }));
 
 jest.mock("app/components/teams/EditTeamModal", () => ({
-  EditTeamModal: () => <div>Edit Modal Open</div>,
+  EditTeamModal: ({ afterEdit }: MockEditTeamModalProps) => (
+    <div>
+      <div>Edit Modal Open</div>
+      <button onClick={() => void afterEdit()}>mock-edit-save</button>
+    </div>
+  ),
 }));
 
 jest.mock("app/components/teams/DeleteTeamModal", () => ({
-  DeleteTeamModal: () => <div>Delete Modal Open</div>,
+  DeleteTeamModal: ({ afterDelete }: MockDeleteTeamModalProps) => (
+    <div>
+      <div>Delete Modal Open</div>
+      <button onClick={() => void afterDelete()}>mock-delete-confirm</button>
+    </div>
+  ),
 }));
 
 describe("pages/TeamsPage", () => {
@@ -170,5 +186,51 @@ describe("pages/TeamsPage", () => {
 
     await user.click(screen.getByRole("button", { name: "mock-open-delete" }));
     expect(screen.getByText("Delete Modal Open")).toBeInTheDocument();
+  });
+
+  test("refetches data and closes edit modal after edit", async () => {
+    const user = userEvent.setup();
+    const refetch = jest.fn().mockResolvedValue(undefined);
+
+    useSettingsObjectsV2Mock.mockReturnValue({
+      data,
+      isLoading: false,
+      refetch,
+    });
+
+    render(<TeamsPage />);
+
+    await user.click(screen.getByRole("button", { name: "mock-open-edit" }));
+    expect(screen.getByText("Edit Modal Open")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "mock-edit-save" }));
+
+    await waitFor(() => {
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.queryByText("Edit Modal Open")).not.toBeInTheDocument();
+  });
+
+  test("refetches data and closes delete modal after delete", async () => {
+    const user = userEvent.setup();
+    const refetch = jest.fn().mockResolvedValue(undefined);
+
+    useSettingsObjectsV2Mock.mockReturnValue({
+      data,
+      isLoading: false,
+      refetch,
+    });
+
+    render(<TeamsPage />);
+
+    await user.click(screen.getByRole("button", { name: "mock-open-delete" }));
+    expect(screen.getByText("Delete Modal Open")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "mock-delete-confirm" }));
+
+    await waitFor(() => {
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.queryByText("Delete Modal Open")).not.toBeInTheDocument();
   });
 });

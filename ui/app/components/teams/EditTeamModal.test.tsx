@@ -49,7 +49,29 @@ describe("components/teams/EditTeamModal", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  test("calls update execute with mapped payload and then afterEdit", async () => {
+  test("shows validation error for empty team name", async () => {
+    const user = userEvent.setup();
+    const execute = jest.fn().mockResolvedValue(undefined);
+    useUpdateSettingsV2Mock.mockReturnValue({ execute });
+
+    render(
+      <EditTeamModal
+        team={{ ...baseTeam }}
+        existingTeams={[{ ...baseTeam }]}
+        closeDialog={jest.fn()}
+        afterEdit={jest.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    const nameInput = screen.getByPlaceholderText("e.g. Platform Team");
+    await user.clear(nameInput);
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(screen.getByText("Team name is required.")).toBeInTheDocument();
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  test("calls update execute with added service and then afterEdit", async () => {
     const user = userEvent.setup();
     const execute = jest.fn().mockResolvedValue(undefined);
     const afterEdit = jest.fn().mockResolvedValue(undefined);
@@ -67,6 +89,11 @@ describe("components/teams/EditTeamModal", () => {
     const nameInput = screen.getByPlaceholderText("e.g. Platform Team");
     await user.clear(nameInput);
     await user.type(nameInput, "Updated Platform Team");
+    await user.type(
+      screen.getByPlaceholderText("e.g. payments-api"),
+      "payments-api",
+    );
+    await user.click(screen.getByRole("button", { name: "Add" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => {
@@ -76,7 +103,7 @@ describe("components/teams/EditTeamModal", () => {
         body: {
           value: {
             name: "Updated Platform Team",
-            services: ["auth-service"],
+            services: ["auth-service", "payments-api"],
           },
         },
       });
