@@ -1,18 +1,28 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 
-import { Modal } from "@dynatrace/strato-components-preview/overlays";
+import { useUpdateSettingsV2 } from "@dynatrace-sdk/react-hooks";
+import { Button } from "@dynatrace/strato-components/buttons";
+import { Flex } from "@dynatrace/strato-components/layouts";
+import { Strong, Text } from "@dynatrace/strato-components/typography";
 import {
-  TextInput,
+  Chip,
+  ChipGroup,
+  MessageContainer,
+} from "@dynatrace/strato-components-preview/content";
+import {
   FormField,
   Label,
+  TextInput,
 } from "@dynatrace/strato-components-preview/forms";
-import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
-import { Button } from "@dynatrace/strato-components/buttons";
+import { Modal } from "@dynatrace/strato-components-preview/overlays";
+import { useIntl } from "react-intl";
 
 import type { Team } from "app/utils/teams/types";
-import { isTeamNameTaken, mapTeamToUpdateSettingsParamsV2, normalize } from "app/utils/teams/helpers";
-import { useUpdateSettingsV2 } from "@dynatrace-sdk/react-hooks";
-import { useIntl } from "react-intl";
+import {
+  isTeamNameTaken,
+  mapTeamToUpdateSettingsParamsV2,
+  normalize,
+} from "app/utils/teams/helpers";
 import { teamsMessages } from "./messages";
 
 interface EditTeamModalProps {
@@ -26,7 +36,7 @@ export function EditTeamModal({
   team,
   existingTeams,
   closeDialog,
-  afterEdit
+  afterEdit,
 }: EditTeamModalProps) {
   const intl = useIntl();
   const [name, setName] = useState<string>(team.name);
@@ -35,13 +45,16 @@ export function EditTeamModal({
   const [error, setError] = useState<string | null>(null);
   const { execute } = useUpdateSettingsV2();
 
-  const otherTeamNames = existingTeams?.filter((t) => t.id !== team.id).map((t) => t.name) ?? [];
+  const otherTeamNames =
+    existingTeams?.filter((t) => t.id !== team.id).map((t) => t.name) ?? [];
 
   const addService = () => {
-    const s = normalize(newService);
-    if (!s) return;
+    const normalizedService = normalize(newService);
+    if (!normalizedService) return;
 
-    setServices((prev) => (prev.includes(s) ? prev : [...prev, s]));
+    setServices((prev) =>
+      prev.includes(normalizedService) ? prev : [...prev, normalizedService],
+    );
     setNewService("");
   };
 
@@ -50,16 +63,19 @@ export function EditTeamModal({
   };
 
   const onEdit = async () => {
-    const n = normalize(name);
-    if (!n) return setError(intl.formatMessage(teamsMessages.teamNameRequiredError));
-    if (isTeamNameTaken(otherTeamNames, n))
+    const normalizedName = normalize(name);
+    if (!normalizedName) {
+      return setError(intl.formatMessage(teamsMessages.teamNameRequiredError));
+    }
+    if (isTeamNameTaken(otherTeamNames, normalizedName)) {
       return setError(intl.formatMessage(teamsMessages.teamNameUniqueError));
+    }
 
-    const updatedTeam = {
-    ...team,
-    name: n,
-    services,
-  };
+    const updatedTeam: Team = {
+      ...team,
+      name: normalizedName,
+      services,
+    };
     await execute(mapTeamToUpdateSettingsParamsV2(updatedTeam));
     await afterEdit();
   };
@@ -70,7 +86,7 @@ export function EditTeamModal({
       show={true}
       onDismiss={closeDialog}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <Flex flexDirection="column" gap={12}>
         <FormField>
           <Label>{intl.formatMessage(teamsMessages.teamNameLabel)}</Label>
           <TextInput
@@ -80,26 +96,24 @@ export function EditTeamModal({
           />
         </FormField>
 
-        <div style={{ fontWeight: 600 }}>
-          {intl.formatMessage(teamsMessages.servicesSectionTitle)}
-        </div>
+        <Strong>{intl.formatMessage(teamsMessages.servicesSectionTitle)}</Strong>
 
         {services.length === 0 ? (
-          <div style={{ opacity: 0.7 }}>
+          <Text textStyle="small">
             {intl.formatMessage(teamsMessages.editNoServicesText)}
-          </div>
+          </Text>
         ) : (
           <ChipGroup>
-            {services.map((s) => (
-              <Chip key={s}>
-                {s}
-                <Chip.DeleteButton onClick={() => removeService(s)} />
+            {services.map((service) => (
+              <Chip key={service}>
+                {service}
+                <Chip.DeleteButton onClick={() => removeService(service)} />
               </Chip>
             ))}
           </ChipGroup>
         )}
 
-        <div style={{ display: "flex", gap: 8 }}>
+        <Flex gap={8}>
           <TextInput
             value={newService}
             onChange={setNewService}
@@ -108,19 +122,24 @@ export function EditTeamModal({
           <Button onClick={addService} disabled={!normalize(newService)}>
             {intl.formatMessage(teamsMessages.addButton)}
           </Button>
-        </div>
+        </Flex>
 
-        {error && <div style={{ color: "crimson" }}>{error}</div>}
+        {error && (
+          <MessageContainer variant="critical">
+            <MessageContainer.Title>Error</MessageContainer.Title>
+            <MessageContainer.Description>{error}</MessageContainer.Description>
+          </MessageContainer>
+        )}
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <Flex justifyContent="flex-end" gap={8}>
           <Button onClick={closeDialog}>
             {intl.formatMessage(teamsMessages.cancelButton)}
           </Button>
-          <Button onClick={() => void onEdit().then()}>
+          <Button onClick={() => void onEdit()}>
             {intl.formatMessage(teamsMessages.saveButton)}
           </Button>
-        </div>
-      </div>
+        </Flex>
+      </Flex>
     </Modal>
   );
 }
