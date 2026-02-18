@@ -1,6 +1,6 @@
 import React from "react";
-
-
+import { Flex } from "@dynatrace/strato-components/layouts";
+import { Heading, Paragraph } from "@dynatrace/strato-components/typography";
 
 export function PageSection({
   title,
@@ -14,26 +14,19 @@ export function PageSection({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 1200 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-          gap: 12,
-        }}
-      >
-        <div>
-          <h2 style={{ margin: 0 }}>{title}</h2>
-          {description ? (
-            <p style={{ margin: "6px 0 0", opacity: 0.75 }}>{description}</p>
-          ) : null}
-        </div>
+    <Flex flexDirection="column" gap={16} maxWidth="1200px">
+      <Flex alignItems="baseline" justifyContent="space-between" gap={12}>
+        <Flex flexDirection="column">
+          <Heading as="h2" level={2}>
+            {title}
+          </Heading>
+          {description ? <Paragraph>{description}</Paragraph> : null}
+        </Flex>
 
-        {right ? <div style={{ display: "flex", gap: 8 }}>{right}</div> : null}
-      </div>
+        {right ? <Flex gap={8}>{right}</Flex> : null}
+      </Flex>
 
       {children}
-    </div>
+    </Flex>
   );
 }
