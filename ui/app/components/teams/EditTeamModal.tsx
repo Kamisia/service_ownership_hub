@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 
 import { Modal } from "@dynatrace/strato-components-preview/overlays";
 import {
@@ -12,6 +12,8 @@ import { Button } from "@dynatrace/strato-components/buttons";
 import type { Team } from "app/utils/teams/types";
 import { isTeamNameTaken, mapTeamToUpdateSettingsParamsV2, normalize } from "app/utils/teams/helpers";
 import { useUpdateSettingsV2 } from "@dynatrace-sdk/react-hooks";
+import { useIntl } from "react-intl";
+import { teamsMessages } from "./messages";
 
 interface EditTeamModalProps {
   team: Team;
@@ -26,6 +28,7 @@ export function EditTeamModal({
   closeDialog,
   afterEdit
 }: EditTeamModalProps) {
+  const intl = useIntl();
   const [name, setName] = useState<string>(team.name);
   const [services, setServices] = useState<string[]>(team.services);
   const [newService, setNewService] = useState<string>("");
@@ -48,36 +51,43 @@ export function EditTeamModal({
 
   const onEdit = async () => {
     const n = normalize(name);
-    if (!n) return setError("Team name is required.");
+    if (!n) return setError(intl.formatMessage(teamsMessages.teamNameRequiredError));
     if (isTeamNameTaken(otherTeamNames, n))
-      return setError("Team name must be unique.");
+      return setError(intl.formatMessage(teamsMessages.teamNameUniqueError));
 
-    team.name = name;
-    team.services = services;
-    await execute(mapTeamToUpdateSettingsParamsV2(team));
+    const updatedTeam = {
+    ...team,
+    name: n,
+    services,
+  };
+    await execute(mapTeamToUpdateSettingsParamsV2(updatedTeam));
     await afterEdit();
   };
 
   return (
     <Modal
-      title={`Edit team: ${team.name}`}
+      title={intl.formatMessage(teamsMessages.editTeamTitle, { teamName: team.name })}
       show={true}
       onDismiss={closeDialog}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <FormField>
-          <Label>Team name</Label>
+          <Label>{intl.formatMessage(teamsMessages.teamNameLabel)}</Label>
           <TextInput
             value={name}
             onChange={setName}
-            placeholder="e.g. Platform Team"
+            placeholder={intl.formatMessage(teamsMessages.teamNamePlaceholder)}
           />
         </FormField>
 
-        <div style={{ fontWeight: 600 }}>Services</div>
+        <div style={{ fontWeight: 600 }}>
+          {intl.formatMessage(teamsMessages.servicesSectionTitle)}
+        </div>
 
         {services.length === 0 ? (
-          <div style={{ opacity: 0.7 }}>No services.</div>
+          <div style={{ opacity: 0.7 }}>
+            {intl.formatMessage(teamsMessages.editNoServicesText)}
+          </div>
         ) : (
           <ChipGroup>
             {services.map((s) => (
@@ -93,18 +103,22 @@ export function EditTeamModal({
           <TextInput
             value={newService}
             onChange={setNewService}
-            placeholder="e.g. payments-api"
+            placeholder={intl.formatMessage(teamsMessages.editServicePlaceholder)}
           />
           <Button onClick={addService} disabled={!normalize(newService)}>
-            Add
+            {intl.formatMessage(teamsMessages.addButton)}
           </Button>
         </div>
 
         {error && <div style={{ color: "crimson" }}>{error}</div>}
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <Button onClick={closeDialog}>Cancel</Button>
-          <Button onClick={() => void onEdit().then()}>Save</Button>
+          <Button onClick={closeDialog}>
+            {intl.formatMessage(teamsMessages.cancelButton)}
+          </Button>
+          <Button onClick={() => void onEdit().then()}>
+            {intl.formatMessage(teamsMessages.saveButton)}
+          </Button>
         </div>
       </div>
     </Modal>
