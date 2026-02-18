@@ -1,19 +1,26 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 
-import { Modal } from "@dynatrace/strato-components-preview/overlays";
+import { useCreateSettingsV2 } from "@dynatrace-sdk/react-hooks";
+import { Button } from "@dynatrace/strato-components/buttons";
+import { Flex } from "@dynatrace/strato-components/layouts";
+import { Strong, Text } from "@dynatrace/strato-components/typography";
 import {
-  TextInput,
+  Chip,
+  ChipGroup,
+  MessageContainer,
+} from "@dynatrace/strato-components-preview/content";
+import {
   FormField,
   Label,
+  TextInput,
 } from "@dynatrace/strato-components-preview/forms";
-import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
-import { Button } from "@dynatrace/strato-components/buttons";
-import { useCreateSettingsV2 } from '@dynatrace-sdk/react-hooks';
-import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
-import { Team } from "app/utils/teams/types";
-import { addServiceUnique, isTeamNameTaken, normalize } from "app/utils/teams/helpers";
+import { Modal } from "@dynatrace/strato-components-preview/overlays";
 import { useIntl } from "react-intl";
+import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
+import { addServiceUnique, isTeamNameTaken, normalize } from "app/utils/teams/helpers";
+import { Team } from "app/utils/teams/types";
 import { teamsMessages } from "./messages";
+
 interface CreateTeamModalProps {
   existingTeams: Team[];
   closeDialog: () => void;
@@ -22,8 +29,8 @@ interface CreateTeamModalProps {
 
 export function CreateTeamModal({
   existingTeams,
-  closeDialog: closeDialog,
-  afterSave
+  closeDialog,
+  afterSave,
 }: CreateTeamModalProps) {
   const intl = useIntl();
   const [name, setName] = useState<string>("");
@@ -33,21 +40,26 @@ export function CreateTeamModal({
   const { execute } = useCreateSettingsV2();
   const otherTeamNames = existingTeams.map((t) => t.name);
 
-  const createTeam = async (name: string, services: string[]) => {
+  const createTeam = async (teamName: string, teamServices: string[]) => {
     await execute({
       body: {
         schemaId: TEAMS_SCHEMA_ID,
         value: {
-          name, services
+          name: teamName,
+          services: teamServices,
         },
       },
     });
-  }
+  };
+
   const submit = async () => {
-    const n = normalize(name);
-    if (!n) return setError(intl.formatMessage(teamsMessages.teamNameRequiredError));
-    if (isTeamNameTaken(otherTeamNames, n))
+    const normalizedName = normalize(name);
+    if (!normalizedName) {
+      return setError(intl.formatMessage(teamsMessages.teamNameRequiredError));
+    }
+    if (isTeamNameTaken(otherTeamNames, normalizedName)) {
       return setError(intl.formatMessage(teamsMessages.teamNameUniqueError));
+    }
 
     await createTeam(name, services);
     await afterSave();
@@ -59,7 +71,7 @@ export function CreateTeamModal({
       show={true}
       onDismiss={closeDialog}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <Flex flexDirection="column" gap={12}>
         <FormField>
           <Label>{intl.formatMessage(teamsMessages.teamNameLabel)}</Label>
           <TextInput
@@ -69,14 +81,12 @@ export function CreateTeamModal({
           />
         </FormField>
 
-        <div style={{ fontWeight: 600 }}>
-          {intl.formatMessage(teamsMessages.servicesSectionTitle)}
-        </div>
+        <Strong>{intl.formatMessage(teamsMessages.servicesSectionTitle)}</Strong>
 
         {services.length === 0 ? (
-          <div style={{ opacity: 0.7 }}>
+          <Text textStyle="small">
             {intl.formatMessage(teamsMessages.createNoServicesText)}
-          </div>
+          </Text>
         ) : (
           <ChipGroup>
             {services.map((service) => (
@@ -96,7 +106,7 @@ export function CreateTeamModal({
           </ChipGroup>
         )}
 
-        <div style={{ display: "flex", gap: 8 }}>
+        <Flex gap={8}>
           <TextInput
             value={newService}
             onChange={setNewService}
@@ -113,11 +123,16 @@ export function CreateTeamModal({
           >
             {intl.formatMessage(teamsMessages.addButton)}
           </Button>
-        </div>
+        </Flex>
 
-        {error && <div style={{ color: "crimson" }}>{error}</div>}
+        {error && (
+          <MessageContainer variant="critical">
+            <MessageContainer.Title>Error</MessageContainer.Title>
+            <MessageContainer.Description>{error}</MessageContainer.Description>
+          </MessageContainer>
+        )}
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <Flex justifyContent="flex-end" gap={8}>
           <Button onClick={closeDialog}>
             {intl.formatMessage(teamsMessages.cancelButton)}
           </Button>
@@ -131,8 +146,8 @@ export function CreateTeamModal({
           >
             {intl.formatMessage(teamsMessages.createButton)}
           </Button>
-        </div>
-      </div>
+        </Flex>
+      </Flex>
     </Modal>
   );
 }
