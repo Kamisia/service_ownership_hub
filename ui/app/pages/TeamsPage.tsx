@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import { Button } from "@dynatrace/strato-components/buttons";
 
 import { Skeleton } from "@dynatrace/strato-components/content";
@@ -11,8 +11,12 @@ import { PageSection } from "app/components/layout/PageSection";
 import { Team } from "app/utils/teams/types";
 import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
 import { mapAppSettingsObjectToTeam } from "app/utils/teams/helpers";
+import { useIntl } from "react-intl";
+import { pagesMessages } from "./messages";
+import { teamsMessages } from "app/components/teams/messages";
 
 export default function TeamsPage() {
+  const intl = useIntl();
   const { data, isLoading, refetch } = useSettingsObjectsV2({
     schemaId: TEAMS_SCHEMA_ID,
     addFields: "value",
@@ -32,9 +36,13 @@ export default function TeamsPage() {
   ) : (
     teams && (
       <PageSection
-        title="Teams"
-        description="Manage team ownership and associated services."
-        right={<Button onClick={() => setCreateOpen(true)}>Add team +</Button>}
+        title={intl.formatMessage(pagesMessages.teamsPageTitle)}
+        description={intl.formatMessage(pagesMessages.teamsPageDescription)}
+        right={
+          <Button onClick={() => setCreateOpen(true)}>
+            {intl.formatMessage(teamsMessages.addTeamButton)}
+          </Button>
+        }
       >
         <TeamsTable teams={teams} onEdit={setEditTeam} onDelete={setDeleteTeam} />
 

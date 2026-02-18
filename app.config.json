@@ -9,7 +9,7 @@
     "scopes": [
       { "name": "storage:logs:read", "comment": "default template" },
       { "name": "storage:buckets:read", "comment": "default template" },
-      { "name": "app-settings:objects:read", "comment": "Read app settings" },
+      { "name": "app-settings:objects:read", "comment": "Read teams settings objects" },
       { "name": "app-settings:objects:write", "comment": "Create/update/delete teams settings objects" }
 
     ]

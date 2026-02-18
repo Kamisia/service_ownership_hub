@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 
 import { Modal } from "@dynatrace/strato-components-preview/overlays";
 import {
@@ -12,6 +12,8 @@ import { useCreateSettingsV2 } from '@dynatrace-sdk/react-hooks';
 import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
 import { Team } from "app/utils/teams/types";
 import { addServiceUnique, isTeamNameTaken, normalize } from "app/utils/teams/helpers";
+import { useIntl } from "react-intl";
+import { teamsMessages } from "./messages";
 interface CreateTeamModalProps {
   existingTeams: Team[];
   closeDialog: () => void;
@@ -23,6 +25,7 @@ export function CreateTeamModal({
   closeDialog: closeDialog,
   afterSave
 }: CreateTeamModalProps) {
+  const intl = useIntl();
   const [name, setName] = useState<string>("");
   const [services, setServices] = useState<string[]>([]);
   const [newService, setNewService] = useState<string>("");
@@ -42,30 +45,38 @@ export function CreateTeamModal({
   }
   const submit = async () => {
     const n = normalize(name);
-    if (!n) return setError("Team name is required.");
+    if (!n) return setError(intl.formatMessage(teamsMessages.teamNameRequiredError));
     if (isTeamNameTaken(otherTeamNames, n))
-      return setError("Team name must be unique.");
+      return setError(intl.formatMessage(teamsMessages.teamNameUniqueError));
 
     await createTeam(name, services);
     await afterSave();
   };
 
   return (
-    <Modal title="Add team" show={true} onDismiss={closeDialog}>
+    <Modal
+      title={intl.formatMessage(teamsMessages.addTeamTitle)}
+      show={true}
+      onDismiss={closeDialog}
+    >
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <FormField>
-          <Label>Team name</Label>
+          <Label>{intl.formatMessage(teamsMessages.teamNameLabel)}</Label>
           <TextInput
             value={name}
             onChange={setName}
-            placeholder="e.g. Platform Team"
+            placeholder={intl.formatMessage(teamsMessages.teamNamePlaceholder)}
           />
         </FormField>
 
-        <div style={{ fontWeight: 600 }}>Services</div>
+        <div style={{ fontWeight: 600 }}>
+          {intl.formatMessage(teamsMessages.servicesSectionTitle)}
+        </div>
 
         {services.length === 0 ? (
-          <div style={{ opacity: 0.7 }}>No services added yet.</div>
+          <div style={{ opacity: 0.7 }}>
+            {intl.formatMessage(teamsMessages.createNoServicesText)}
+          </div>
         ) : (
           <ChipGroup>
             {services.map((service) => (
@@ -89,7 +100,7 @@ export function CreateTeamModal({
           <TextInput
             value={newService}
             onChange={setNewService}
-            placeholder="e.g. auth-service"
+            placeholder={intl.formatMessage(teamsMessages.createServicePlaceholder)}
           />
           <Button
             onClick={() => {
@@ -100,22 +111,26 @@ export function CreateTeamModal({
             }}
             disabled={!normalize(newService)}
           >
-            Add
+            {intl.formatMessage(teamsMessages.addButton)}
           </Button>
         </div>
 
         {error && <div style={{ color: "crimson" }}>{error}</div>}
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <Button onClick={closeDialog}>Cancel</Button>
+          <Button onClick={closeDialog}>
+            {intl.formatMessage(teamsMessages.cancelButton)}
+          </Button>
           <Button
             onClick={() => {
               void submit().catch((e) => {
-                setError("Failed to create team.");
+                setError(intl.formatMessage(teamsMessages.createTeamFailedError));
                 console.error(e);
               });
             }}
-          >Create</Button>
+          >
+            {intl.formatMessage(teamsMessages.createButton)}
+          </Button>
         </div>
       </div>
     </Modal>

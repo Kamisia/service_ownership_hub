@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+﻿import React, { useCallback, useMemo } from "react";
 
 import { DataTable } from "@dynatrace/strato-components-preview/tables";
 import type { DataTableColumnDef, DataTableCustomCell } from "@dynatrace/strato-components-preview/tables";
@@ -6,6 +6,8 @@ import type { DataTableColumnDef, DataTableCustomCell } from "@dynatrace/strato-
 import { Button } from "@dynatrace/strato-components/buttons";
 import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
 import { Team } from "app/utils/teams/types";
+import { useIntl } from "react-intl";
+import { teamsMessages } from "./messages";
 
 interface TeamsTableProps {
   teams: Team[];
@@ -15,12 +17,16 @@ interface TeamsTableProps {
 
 
 export function TeamsTable({ teams,  onEdit, onDelete }: TeamsTableProps) {
+  const intl = useIntl();
+
   const servicesCell = useCallback<DataTableCustomCell<Team, undefined>>(
   ({ rowData }) => (
     <div style={{ display: "flex", alignItems: "center", height: "100%", minHeight: 32 }}>
       <div style={{ minWidth: 0 }}>
         {rowData.services.length === 0 ? (
-          <span style={{ opacity: 0.7 }}>No services</span>
+          <span style={{ opacity: 0.7 }}>
+            {intl.formatMessage(teamsMessages.tableNoServicesText)}
+          </span>
         ) : (
           <ChipGroup>
             {rowData.services.map((s) => (
@@ -31,7 +37,7 @@ export function TeamsTable({ teams,  onEdit, onDelete }: TeamsTableProps) {
       </div>
     </div>
   ),
-  []
+  [intl]
 );
 
 const actionsCell = useCallback<DataTableCustomCell<Team, unknown>>(
@@ -46,20 +52,30 @@ const actionsCell = useCallback<DataTableCustomCell<Team, unknown>>(
         minHeight: 32,
       }}
     >
-      <Button onClick={() => onEdit(rowData)}>Edit</Button>
-      <Button onClick={() => onDelete(rowData)}>Delete</Button>
+      <Button onClick={() => onEdit(rowData)}>
+        {intl.formatMessage(teamsMessages.editButton)}
+      </Button>
+      <Button onClick={() => onDelete(rowData)}>
+        {intl.formatMessage(teamsMessages.deleteButton)}
+      </Button>
     </div>
   ),
-  [onEdit, onDelete]
+  [intl, onEdit, onDelete]
 );
 
 
   const columns = useMemo((): DataTableColumnDef<Team, unknown>[] => {
   return [
-    { id: "team", header: "Team", accessor: "name", columnType: "text", width: "2fr" },
+    {
+      id: "team",
+      header: intl.formatMessage(teamsMessages.tableTeamHeader),
+      accessor: "name",
+      columnType: "text",
+      width: "2fr",
+    },
     {
       id: "services",
-      header: "Services",
+      header: intl.formatMessage(teamsMessages.tableServicesHeader),
       accessor: "services",
       columnType: "text",
       width: "5fr",
@@ -68,7 +84,7 @@ const actionsCell = useCallback<DataTableCustomCell<Team, unknown>>(
     },
     {
       id: "actions",
-      header: "Actions",
+      header: intl.formatMessage(teamsMessages.tableActionsHeader),
       accessor: "id",
       columnType: "text",
       width: "1.5fr",
@@ -76,7 +92,7 @@ const actionsCell = useCallback<DataTableCustomCell<Team, unknown>>(
       disableSorting: true,
     },
   ];
-}, [servicesCell, actionsCell]);
+}, [servicesCell, actionsCell, intl]);
 
 
   return (

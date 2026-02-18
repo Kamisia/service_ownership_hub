@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import { useDql, useSettingsObjectsV2 } from "@dynatrace-sdk/react-hooks";
 import { Button } from "@dynatrace/strato-components/buttons";
+import { useIntl } from "react-intl";
 import { buildQuery } from "../dql/teamsErrorsQuery";
 import { formatTs, parseTeamsMap } from "../dql/teamsErrorsUtils";
 import {
@@ -9,6 +10,7 @@ import {
 } from "../components/teamsErrors/TeamsErrorsTable";
 import { mapAppSettingsObjectToTeam } from "app/utils/teams/helpers";
 import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
+import { pagesMessages } from "./messages";
 
 type RawDqlRecord = {
   timestamp: string | number;
@@ -18,6 +20,7 @@ type RawDqlRecord = {
 };
 
 export default function TeamsErrorPage() {
+  const intl = useIntl();
   const [q, setQ] = useState("");
   const { data } = useSettingsObjectsV2({
     schemaId: TEAMS_SCHEMA_ID,
@@ -67,10 +70,11 @@ export default function TeamsErrorPage() {
         }}
       >
         <div>
-          <h2 style={{ margin: 0 }}>Teams errors</h2>
+          <h2 style={{ margin: 0 }}>
+            {intl.formatMessage(pagesMessages.teamsErrorsTitle)}
+          </h2>
           <p style={{ margin: "6px 0 0", opacity: 0.75 }}>
-            ERROR logs enriched with ownership based on your Teams
-            configuration.
+            {intl.formatMessage(pagesMessages.teamsErrorsDescription)}
           </p>
         </div>
 
@@ -78,7 +82,7 @@ export default function TeamsErrorPage() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Filter by service, team, content…"
+            placeholder={intl.formatMessage(pagesMessages.teamsErrorsFilterPlaceholder)}
             style={{
               width: 320,
               padding: "8px 10px",
@@ -89,23 +93,24 @@ export default function TeamsErrorPage() {
           />
           <Button
             onClick={() => {
-              // setRefreshKey((k) => k + 1);
               void result
                 .refetch?.()
                 .catch((e) => console.error("Refetch failed:", e));
             }}
             disabled={result.isLoading}
           >
-            Refresh
+            {intl.formatMessage(pagesMessages.refreshButton)}
           </Button>
         </div>
       </div>
 
-      {result.isLoading && <div>Loading…</div>}
+      {result.isLoading && <div>{intl.formatMessage(pagesMessages.loadingText)}</div>}
 
       {result.error && (
         <div style={{ color: "crimson" }}>
-          Failed to load logs: {String(result.error)}
+          {intl.formatMessage(pagesMessages.loadFailedText, {
+            error: String(result.error),
+          })}
         </div>
       )}
 
