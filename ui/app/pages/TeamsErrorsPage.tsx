@@ -1,6 +1,8 @@
-﻿import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useDql, useSettingsObjectsV2 } from "@dynatrace-sdk/react-hooks";
 import { Button } from "@dynatrace/strato-components/buttons";
+import { Skeleton } from "@dynatrace/strato-components/content";
+import { TextInput } from "@dynatrace/strato-components-preview/forms";
 import { useIntl } from "react-intl";
 import { buildQuery } from "../dql/teamsErrorsQuery";
 import { formatTs, parseTeamsMap } from "../dql/teamsErrorsUtils";
@@ -8,6 +10,7 @@ import {
   TeamsErrorsTable,
   type TeamsErrorRow,
 } from "../components/teamsErrors/TeamsErrorsTable";
+import { PageSection } from "app/components/layout/PageSection";
 import { mapAppSettingsObjectToTeam } from "app/utils/teams/helpers";
 import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
 import { pagesMessages } from "./messages";
@@ -60,36 +63,15 @@ export default function TeamsErrorPage() {
   }, [rowsAll, q]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-          gap: 12,
-        }}
-      >
-        <div>
-          <h2 style={{ margin: 0 }}>
-            {intl.formatMessage(pagesMessages.teamsErrorsTitle)}
-          </h2>
-          <p style={{ margin: "6px 0 0", opacity: 0.75 }}>
-            {intl.formatMessage(pagesMessages.teamsErrorsDescription)}
-          </p>
-        </div>
-
-        <div style={{ display: "flex", gap: 8 }}>
-          <input
+    <PageSection
+      title={intl.formatMessage(pagesMessages.teamsErrorsTitle)}
+      description={intl.formatMessage(pagesMessages.teamsErrorsDescription)}
+      right={
+        <>
+          <TextInput
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={setQ}
             placeholder={intl.formatMessage(pagesMessages.teamsErrorsFilterPlaceholder)}
-            style={{
-              width: 320,
-              padding: "8px 10px",
-              borderRadius: 10,
-              border: "1px solid rgba(0,0,0,0.15)",
-              outline: "none",
-            }}
           />
           <Button
             onClick={() => {
@@ -101,13 +83,18 @@ export default function TeamsErrorPage() {
           >
             {intl.formatMessage(pagesMessages.refreshButton)}
           </Button>
-        </div>
-      </div>
-
-      {result.isLoading && <div>{intl.formatMessage(pagesMessages.loadingText)}</div>}
+        </>
+      }
+    >
+      {result.isLoading && (
+        <>
+          <Skeleton />
+          <div>{intl.formatMessage(pagesMessages.loadingText)}</div>
+        </>
+      )}
 
       {result.error && (
-        <div style={{ color: "crimson" }}>
+        <div role="alert">
           {intl.formatMessage(pagesMessages.loadFailedText, {
             error: String(result.error),
           })}
@@ -115,6 +102,6 @@ export default function TeamsErrorPage() {
       )}
 
       {!result.isLoading && !result.error && <TeamsErrorsTable rows={rows} />}
-    </div>
+    </PageSection>
   );
 }
