@@ -1,6 +1,7 @@
 [
   {
     "schemaId": "teams",
+    "objectId":"BXRlYW1zODEwNjk3NTEzNjgyOTA1",
     "value": {
       "id": "test1",
       "name": "team alpha",
@@ -12,17 +13,7 @@
   },
   {
     "schemaId": "teams",
-    "value": {
-      "id": "dynatrace",
-      "name": "team Dynatrace",
-      "services": ["Dynatrace-app"]
-    },
-    "schemaVersion": "1",
-    "summary": "team Dynatrace team",
-    "searchSummary": "Service ownership Hub - teams"
-  },
-  {
-    "schemaId": "test",
+     "objectId":"BXRlYW1zODEwNjk3NTEzNjgyOTA2",
     "value": {
       "id": "dynatrace",
       "name": "team Dynatrace",
