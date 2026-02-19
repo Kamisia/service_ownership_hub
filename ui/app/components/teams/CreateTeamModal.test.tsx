@@ -2,20 +2,26 @@
 import { render } from "@dynatrace/strato-components-preview-testing/jest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useCreateSettingsV2 } from "@dynatrace-sdk/react-hooks";
+import { useCreateSettingsV2, useDql } from "@dynatrace-sdk/react-hooks";
 import { CreateTeamModal } from "./CreateTeamModal";
 import { TEAMS_SCHEMA_ID } from "../../utils/teams/constants";
 import * as teamHelpers from "../../utils/teams/helpers";
 
 jest.mock("@dynatrace-sdk/react-hooks", () => ({
   useCreateSettingsV2: jest.fn(),
+  useDql: jest.fn(),
 }));
 
 describe("components/teams/CreateTeamModal", () => {
   const useCreateSettingsV2Mock = useCreateSettingsV2 as jest.Mock;
+  const useDqlMock = useDql as jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    useDqlMock.mockReturnValue({
+      data: { records: [] },
+      isLoading: false,
+    });
   });
 
   test("shows validation error when team name already exists", async () => {
@@ -75,6 +81,30 @@ describe("components/teams/CreateTeamModal", () => {
       screen.getByText("Service is already assigned to another team."),
     ).toBeInTheDocument();
     expect(screen.queryByText("auth-service")).not.toBeInTheDocument();
+  });
+
+  test("fills service input after selecting a suggestion", async () => {
+    const user = userEvent.setup();
+    const execute = jest.fn().mockResolvedValue(undefined);
+    useCreateSettingsV2Mock.mockReturnValue({ execute });
+    useDqlMock.mockReturnValue({
+      data: { records: [{ "service.name": "payments-api" }] },
+      isLoading: false,
+    });
+
+    render(
+      <CreateTeamModal
+        existingTeams={[]}
+        closeDialog={jest.fn()}
+        afterSave={jest.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "payments-api" }));
+
+    expect(
+      screen.getByPlaceholderText("e.g. auth-service"),
+    ).toHaveValue("payments-api");
   });
 
   test("blocks submit when service conflict is detected at save time", async () => {

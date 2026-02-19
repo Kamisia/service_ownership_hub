@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 import { useUpdateSettingsV2 } from "@dynatrace-sdk/react-hooks";
 import { Button } from "@dynatrace/strato-components/buttons";
@@ -25,6 +25,7 @@ import {
   normalize,
 } from "app/utils/teams/helpers";
 import { teamsMessages } from "./messages";
+import { useServiceSuggestions } from "app/hooks/useServiceSuggestions";
 
 interface EditTeamModalProps {
   team: Team;
@@ -45,28 +46,43 @@ export function EditTeamModal({
   const [newService, setNewService] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const { execute } = useUpdateSettingsV2();
+  const { suggestions, isLoading } = useServiceSuggestions();
 
   const otherTeamNames =
     existingTeams?.filter((t) => t.id !== team.id).map((t) => t.name) ?? [];
 
+  const filteredSuggestions = useMemo(() => {
+    const query = normalize(newService).toLowerCase();
+
+    return suggestions
+      .filter(
+        (suggestion) =>
+          !services.some(
+            (existingService) =>
+              normalize(existingService).toLowerCase() === suggestion.toLowerCase(),
+          ),
+      )
+      .filter((suggestion) => !query || suggestion.toLowerCase().includes(query))
+      .slice(0, 8);
+  }, [newService, services, suggestions]);
+
   const addService = () => {
-  const serviceName = normalize(newService);
-  if (!serviceName) return;
+    const serviceName = normalize(newService);
+    if (!serviceName) return;
 
-  if (isServiceAssignedToAnotherTeam(existingTeams, serviceName, team.id)) {
-    setError(intl.formatMessage(teamsMessages.serviceAlreadyAssignedError));
-    return;
-  }
+    if (isServiceAssignedToAnotherTeam(existingTeams, serviceName, team.id)) {
+      setError(intl.formatMessage(teamsMessages.serviceAlreadyAssignedError));
+      return;
+    }
 
-  setServices((prev) =>
-    prev.some((s) => normalize(s).toLowerCase() === serviceName.toLowerCase())
-      ? prev
-      : [...prev, serviceName],
-  );
-  setNewService("");
-  setError(null);
-};
-
+    setServices((prev) =>
+      prev.some((s) => normalize(s).toLowerCase() === serviceName.toLowerCase())
+        ? prev
+        : [...prev, serviceName],
+    );
+    setNewService("");
+    setError(null);
+  };
 
   const removeService = (serviceName: string) => {
     setServices((prev) => prev.filter((x) => x !== serviceName));
@@ -139,6 +155,25 @@ export function EditTeamModal({
             {intl.formatMessage(teamsMessages.addButton)}
           </Button>
         </Flex>
+        {isLoading && (
+          <Text textStyle="small">
+            {intl.formatMessage(teamsMessages.serviceSuggestionsLoading)}
+          </Text>
+        )}
+        {filteredSuggestions.length > 0 && (
+          <Flex flexDirection="column" gap={4}>
+            <Text textStyle="small">
+              {intl.formatMessage(teamsMessages.serviceSuggestionsLabel)}
+            </Text>
+            <Flex gap={8} flexWrap="wrap">
+              {filteredSuggestions.map((suggestion) => (
+                <Button key={suggestion} onClick={() => setNewService(suggestion)}>
+                  {suggestion}
+                </Button>
+              ))}
+            </Flex>
+          </Flex>
+        )}
 
         {error && (
           <MessageContainer variant="critical">

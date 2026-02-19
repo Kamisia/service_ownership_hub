@@ -2,15 +2,17 @@
 import { render } from "@dynatrace/strato-components-preview-testing/jest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useUpdateSettingsV2 } from "@dynatrace-sdk/react-hooks";
+import { useDql, useUpdateSettingsV2 } from "@dynatrace-sdk/react-hooks";
 import { EditTeamModal } from "./EditTeamModal";
 
 jest.mock("@dynatrace-sdk/react-hooks", () => ({
   useUpdateSettingsV2: jest.fn(),
+  useDql: jest.fn(),
 }));
 
 describe("components/teams/EditTeamModal", () => {
   const useUpdateSettingsV2Mock = useUpdateSettingsV2 as jest.Mock;
+  const useDqlMock = useDql as jest.Mock;
 
   const baseTeam = {
     id: "t-1",
@@ -21,6 +23,10 @@ describe("components/teams/EditTeamModal", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    useDqlMock.mockReturnValue({
+      data: { records: [] },
+      isLoading: false,
+    });
   });
 
   test("shows validation error for duplicate team name", async () => {
@@ -103,6 +109,31 @@ describe("components/teams/EditTeamModal", () => {
       screen.getByText("Service is already assigned to another team."),
     ).toBeInTheDocument();
     expect(screen.queryByText("payments-api")).not.toBeInTheDocument();
+  });
+
+  test("fills service input after selecting a suggestion", async () => {
+    const user = userEvent.setup();
+    const execute = jest.fn().mockResolvedValue(undefined);
+    useUpdateSettingsV2Mock.mockReturnValue({ execute });
+    useDqlMock.mockReturnValue({
+      data: { records: [{ "service.name": "payments-api" }] },
+      isLoading: false,
+    });
+
+    render(
+      <EditTeamModal
+        team={{ ...baseTeam }}
+        existingTeams={[{ ...baseTeam }]}
+        closeDialog={jest.fn()}
+        afterEdit={jest.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "payments-api" }));
+
+    expect(
+      screen.getByPlaceholderText("e.g. payments-api"),
+    ).toHaveValue("payments-api");
   });
 
   test("blocks save when existing services conflict with another team", async () => {

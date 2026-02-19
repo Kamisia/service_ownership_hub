@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 import { useCreateSettingsV2 } from "@dynatrace-sdk/react-hooks";
 import { Button } from "@dynatrace/strato-components/buttons";
@@ -25,6 +25,7 @@ import {
 } from "app/utils/teams/helpers";
 import { Team } from "app/utils/teams/types";
 import { teamsMessages } from "./messages";
+import { useServiceSuggestions } from "app/hooks/useServiceSuggestions";
 
 interface CreateTeamModalProps {
   existingTeams: Team[];
@@ -44,6 +45,22 @@ export function CreateTeamModal({
   const [error, setError] = useState<string | null>(null);
   const { execute } = useCreateSettingsV2();
   const otherTeamNames = existingTeams.map((t) => t.name);
+  const { suggestions, isLoading } = useServiceSuggestions();
+
+  const filteredSuggestions = useMemo(() => {
+    const query = normalize(newService).toLowerCase();
+
+    return suggestions
+      .filter(
+        (suggestion) =>
+          !services.some(
+            (existingService) =>
+              normalize(existingService).toLowerCase() === suggestion.toLowerCase(),
+          ),
+      )
+      .filter((suggestion) => !query || suggestion.toLowerCase().includes(query))
+      .slice(0, 8);
+  }, [newService, services, suggestions]);
 
   const createTeam = async (teamName: string, teamServices: string[]) => {
     await execute({
@@ -142,6 +159,25 @@ export function CreateTeamModal({
             {intl.formatMessage(teamsMessages.addButton)}
           </Button>
         </Flex>
+        {isLoading && (
+          <Text textStyle="small">
+            {intl.formatMessage(teamsMessages.serviceSuggestionsLoading)}
+          </Text>
+        )}
+        {filteredSuggestions.length > 0 && (
+          <Flex flexDirection="column" gap={4}>
+            <Text textStyle="small">
+              {intl.formatMessage(teamsMessages.serviceSuggestionsLabel)}
+            </Text>
+            <Flex gap={8} flexWrap="wrap">
+              {filteredSuggestions.map((suggestion) => (
+                <Button key={suggestion} onClick={() => setNewService(suggestion)}>
+                  {suggestion}
+                </Button>
+              ))}
+            </Flex>
+          </Flex>
+        )}
 
         {error && (
           <MessageContainer variant="critical">

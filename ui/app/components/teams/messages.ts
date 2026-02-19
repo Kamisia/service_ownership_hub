@@ -105,4 +105,12 @@ export const teamsMessages = defineMessages({
     id: "service.already.assigned.error",
     defaultMessage: "Service is already assigned to another team.",
   },
+  serviceSuggestionsLabel: {
+    id: "teams.services.suggestions.label",
+    defaultMessage: "Suggestions",
+  },
+  serviceSuggestionsLoading: {
+    id: "teams.services.suggestions.loading",
+    defaultMessage: "Loading suggestions...",
+  },
 });
