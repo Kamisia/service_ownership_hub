@@ -80,6 +80,12 @@ export function EditTeamModal({
     if (isTeamNameTaken(otherTeamNames, normalizedName)) {
       return setError(intl.formatMessage(teamsMessages.teamNameUniqueError));
     }
+    const hasServiceConflict = services.some((service) =>
+      isServiceAssignedToAnotherTeam(existingTeams, service, team.id),
+    );
+    if (hasServiceConflict) {
+      return setError(intl.formatMessage(teamsMessages.serviceAlreadyAssignedError));
+    }
 
     const updatedTeam: Team = {
       ...team,

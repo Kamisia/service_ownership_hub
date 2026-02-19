@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { useCreateSettingsV2 } from "@dynatrace-sdk/react-hooks";
 import { CreateTeamModal } from "./CreateTeamModal";
 import { TEAMS_SCHEMA_ID } from "../../utils/teams/constants";
+import * as teamHelpers from "../../utils/teams/helpers";
 
 jest.mock("@dynatrace-sdk/react-hooks", () => ({
   useCreateSettingsV2: jest.fn(),
@@ -74,6 +75,40 @@ describe("components/teams/CreateTeamModal", () => {
       screen.getByText("Service is already assigned to another team."),
     ).toBeInTheDocument();
     expect(screen.queryByText("auth-service")).not.toBeInTheDocument();
+  });
+
+  test("blocks submit when service conflict is detected at save time", async () => {
+    const user = userEvent.setup();
+    const execute = jest.fn().mockResolvedValue(undefined);
+    const afterSave = jest.fn().mockResolvedValue(undefined);
+    const conflictSpy = jest
+      .spyOn(teamHelpers, "isServiceAssignedToAnotherTeam")
+      .mockReturnValueOnce(false)
+      .mockReturnValue(true);
+    useCreateSettingsV2Mock.mockReturnValue({ execute });
+
+    render(
+      <CreateTeamModal
+        existingTeams={[]}
+        closeDialog={jest.fn()}
+        afterSave={afterSave}
+      />,
+    );
+
+    await user.type(screen.getByPlaceholderText("e.g. Platform Team"), "SRE");
+    await user.type(
+      screen.getByPlaceholderText("e.g. auth-service"),
+      "payments-api",
+    );
+    await user.click(screen.getByRole("button", { name: "Add" }));
+    await user.click(screen.getByRole("button", { name: "Create" }));
+
+    expect(
+      screen.getByText("Service is already assigned to another team."),
+    ).toBeInTheDocument();
+    expect(execute).not.toHaveBeenCalled();
+    expect(afterSave).not.toHaveBeenCalled();
+    conflictSpy.mockRestore();
   });
 
   test("calls create execute and afterSave on successful submit", async () => {

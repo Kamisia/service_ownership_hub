@@ -105,6 +105,46 @@ describe("components/teams/EditTeamModal", () => {
     expect(screen.queryByText("payments-api")).not.toBeInTheDocument();
   });
 
+  test("blocks save when existing services conflict with another team", async () => {
+    const user = userEvent.setup();
+    const execute = jest.fn().mockResolvedValue(undefined);
+    useUpdateSettingsV2Mock.mockReturnValue({ execute });
+
+    render(
+      <EditTeamModal
+        team={{
+          id: "t-1",
+          name: "Platform Team",
+          services: ["shared-service"],
+          version: "4",
+        }}
+        existingTeams={[
+          {
+            id: "t-1",
+            name: "Platform Team",
+            services: ["shared-service"],
+            version: "4",
+          },
+          {
+            id: "t-2",
+            name: "Payments Team",
+            services: ["shared-service"],
+            version: "2",
+          },
+        ]}
+        closeDialog={jest.fn()}
+        afterEdit={jest.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(
+      screen.getByText("Service is already assigned to another team."),
+    ).toBeInTheDocument();
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   test("calls update execute with added service and then afterEdit", async () => {
     const user = userEvent.setup();
     const execute = jest.fn().mockResolvedValue(undefined);

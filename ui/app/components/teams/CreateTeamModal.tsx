@@ -65,6 +65,12 @@ export function CreateTeamModal({
     if (isTeamNameTaken(otherTeamNames, normalizedName)) {
       return setError(intl.formatMessage(teamsMessages.teamNameUniqueError));
     }
+    const hasServiceConflict = services.some((service) =>
+      isServiceAssignedToAnotherTeam(existingTeams, service),
+    );
+    if (hasServiceConflict) {
+      return setError(intl.formatMessage(teamsMessages.serviceAlreadyAssignedError));
+    }
 
     await createTeam(name, services);
     await afterSave();
