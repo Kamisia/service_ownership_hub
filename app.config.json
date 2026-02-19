@@ -4,7 +4,7 @@
   "app": {
     "name": "service_ownership_hub",
     "version": "0.0.0",
-    "description": "Dynatrace app for managing team-to-service ownership and enriching ERROR log triage with ownership context.",
+    "description": "Team-to-service ownership and ERROR log triage app.",
     "id": "my.service.ownership.hub",
     "scopes": [
       { "name": "storage:logs:read", "comment": "default template" },
