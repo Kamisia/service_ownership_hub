@@ -44,6 +44,38 @@ describe("components/teams/CreateTeamModal", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+  test("shows validation error when service is already assigned to another team", async () => {
+    const user = userEvent.setup();
+    const execute = jest.fn().mockResolvedValue(undefined);
+    useCreateSettingsV2Mock.mockReturnValue({ execute });
+
+    render(
+      <CreateTeamModal
+        existingTeams={[
+          {
+            id: "t-1",
+            name: "Platform Team",
+            services: ["auth-service"],
+            version: "1",
+          },
+        ]}
+        closeDialog={jest.fn()}
+        afterSave={jest.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    await user.type(
+      screen.getByPlaceholderText("e.g. auth-service"),
+      "auth-service",
+    );
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    expect(
+      screen.getByText("Service is already assigned to another team."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("auth-service")).not.toBeInTheDocument();
+  });
+
   test("calls create execute and afterSave on successful submit", async () => {
     const user = userEvent.setup();
     const execute = jest.fn().mockResolvedValue(undefined);
