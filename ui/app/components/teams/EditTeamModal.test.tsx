@@ -71,6 +71,40 @@ describe("components/teams/EditTeamModal", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
+  test("shows validation error when service is already assigned to another team", async () => {
+    const user = userEvent.setup();
+    const execute = jest.fn().mockResolvedValue(undefined);
+    useUpdateSettingsV2Mock.mockReturnValue({ execute });
+
+    render(
+      <EditTeamModal
+        team={{ ...baseTeam }}
+        existingTeams={[
+          { ...baseTeam },
+          {
+            id: "t-2",
+            name: "Payments Team",
+            services: ["payments-api"],
+            version: "2",
+          },
+        ]}
+        closeDialog={jest.fn()}
+        afterEdit={jest.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    await user.type(
+      screen.getByPlaceholderText("e.g. payments-api"),
+      "payments-api",
+    );
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    expect(
+      screen.getByText("Service is already assigned to another team."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("payments-api")).not.toBeInTheDocument();
+  });
+
   test("calls update execute with added service and then afterEdit", async () => {
     const user = userEvent.setup();
     const execute = jest.fn().mockResolvedValue(undefined);

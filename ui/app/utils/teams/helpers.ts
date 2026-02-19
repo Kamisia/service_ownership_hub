@@ -41,3 +41,13 @@ export function mapTeamToUpdateSettingsParamsV2(
     },
   } as UpdateSettingsParamsV2;
 }
+ export function isServiceAssignedToAnotherTeam(
+  teams :Team[],
+  serviceName: string,
+  currentTeamId?: string,
+): boolean {
+  const s = key(serviceName);
+  return teams.some(
+    (t) => t.id !== currentTeamId && (t.services ?? []).some((x) => key(x) === s),
+  );
+}

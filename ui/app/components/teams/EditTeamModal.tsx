@@ -19,6 +19,7 @@ import { useIntl } from "react-intl";
 
 import type { Team } from "app/utils/teams/types";
 import {
+  isServiceAssignedToAnotherTeam,
   isTeamNameTaken,
   mapTeamToUpdateSettingsParamsV2,
   normalize,
@@ -49,14 +50,23 @@ export function EditTeamModal({
     existingTeams?.filter((t) => t.id !== team.id).map((t) => t.name) ?? [];
 
   const addService = () => {
-    const normalizedService = normalize(newService);
-    if (!normalizedService) return;
+  const serviceName = normalize(newService);
+  if (!serviceName) return;
 
-    setServices((prev) =>
-      prev.includes(normalizedService) ? prev : [...prev, normalizedService],
-    );
-    setNewService("");
-  };
+  if (isServiceAssignedToAnotherTeam(existingTeams, serviceName, team.id)) {
+    setError(intl.formatMessage(teamsMessages.serviceAlreadyAssignedError));
+    return;
+  }
+
+  setServices((prev) =>
+    prev.some((s) => normalize(s).toLowerCase() === serviceName.toLowerCase())
+      ? prev
+      : [...prev, serviceName],
+  );
+  setNewService("");
+  setError(null);
+};
+
 
   const removeService = (serviceName: string) => {
     setServices((prev) => prev.filter((x) => x !== serviceName));

@@ -101,4 +101,8 @@ export const teamsMessages = defineMessages({
     id: "teams.table.noServices",
     defaultMessage: "No services",
   },
+  serviceAlreadyAssignedError: {
+    id: "service.already.assigned.error",
+    defaultMessage: "Service is already assigned to another team.",
+  },
 });

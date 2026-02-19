@@ -17,7 +17,12 @@ import {
 import { Modal } from "@dynatrace/strato-components-preview/overlays";
 import { useIntl } from "react-intl";
 import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
-import { addServiceUnique, isTeamNameTaken, normalize } from "app/utils/teams/helpers";
+import {
+  addServiceUnique,
+  isServiceAssignedToAnotherTeam,
+  isTeamNameTaken,
+  normalize,
+} from "app/utils/teams/helpers";
 import { Team } from "app/utils/teams/types";
 import { teamsMessages } from "./messages";
 
@@ -114,10 +119,17 @@ export function CreateTeamModal({
           />
           <Button
             onClick={() => {
+              const serviceName = normalize(newService);
+              if (!serviceName) return;
+              if (isServiceAssignedToAnotherTeam(existingTeams, serviceName)) {
+                setError(intl.formatMessage(teamsMessages.serviceAlreadyAssignedError));
+                return;
+              }
               setServices((previousServices) =>
-                addServiceUnique(previousServices, newService),
+                addServiceUnique(previousServices, serviceName),
               );
               setNewService("");
+              setError(null);
             }}
             disabled={!normalize(newService)}
           >
