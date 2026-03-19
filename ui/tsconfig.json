@@ -18,6 +18,10 @@
     "skipLibCheck": true /* Skip type checking of declaration files. */,
     "sourceMap": true,
     "strictNullChecks": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
     "target": "ESNext",
     "types": ["node", "jest", "@testing-library/jest-dom"]
   },

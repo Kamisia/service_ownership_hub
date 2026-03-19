@@ -5,7 +5,7 @@ import type { DataTableColumnDef, DataTableCustomCell } from "@dynatrace/strato-
 
 import { Button } from "@dynatrace/strato-components/buttons";
 import { Chip, ChipGroup } from "@dynatrace/strato-components-preview/content";
-import { Team } from "app/utils/teams/types";
+import type { Team } from "app/utils/teams/types";
 import { useIntl } from "react-intl";
 import { teamsMessages } from "./messages";
 
@@ -19,7 +19,7 @@ interface TeamsTableProps {
 export function TeamsTable({ teams,  onEdit, onDelete }: TeamsTableProps) {
   const intl = useIntl();
 
-  const servicesCell = useCallback<DataTableCustomCell<Team, undefined>>(
+  const servicesCell = useCallback<DataTableCustomCell<Team, unknown>>(
   ({ rowData }) => (
     <div style={{ display: "flex", alignItems: "center", height: "100%", minHeight: 32 }}>
       <div style={{ minWidth: 0 }}>

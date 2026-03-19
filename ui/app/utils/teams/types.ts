@@ -1,8 +1,8 @@
-export class Team {
+export type Team = {
   id: string;
   name: string;
   services: string[];
   version: string;
   createdAt?: string;
   updatedAt?: string;
-}
+};
