@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { render } from "@dynatrace/strato-components-preview-testing/jest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -14,7 +14,7 @@ type MockTeam = {
 
 type MockPageSectionProps = {
   title: string;
-  right: React.ReactNode;
+  right?: React.ReactNode;
   children: React.ReactNode;
 };
 
@@ -42,6 +42,26 @@ jest.mock("@dynatrace/strato-components/content", () => ({
   Skeleton: () => <div>Mock Skeleton</div>,
 }));
 
+jest.mock("@dynatrace/strato-components-preview/content", () => {
+  function MockMessageContainer({ children }: { children: React.ReactNode }) {
+    return <div>{children}</div>;
+  }
+  function MockMessageContainerTitle({ children }: { children: React.ReactNode }) {
+    return <div>{children}</div>;
+  }
+  function MockMessageContainerDescription({ children }: { children: React.ReactNode }) {
+    return <div>{children}</div>;
+  }
+
+  const MessageContainer = MockMessageContainer as typeof MockMessageContainer & {
+    Title: typeof MockMessageContainerTitle;
+    Description: typeof MockMessageContainerDescription;
+  };
+  MessageContainer.Title = MockMessageContainerTitle;
+  MessageContainer.Description = MockMessageContainerDescription;
+  return { MessageContainer };
+});
+
 jest.mock("app/components/layout/PageSection", () => ({
   PageSection: ({ title, right, children }: MockPageSectionProps) => (
     <section>
@@ -56,8 +76,8 @@ jest.mock("app/components/teams/TeamsTable", () => ({
   TeamsTable: ({ teams, onEdit, onDelete }: MockTeamsTableProps) => (
     <div>
       <div data-testid="teams-count">{teams.length}</div>
-      <button onClick={() => onEdit(teams[0])}>mock-open-edit</button>
-      <button onClick={() => onDelete(teams[0])}>mock-open-delete</button>
+      {teams[0] && <button onClick={() => onEdit(teams[0])}>mock-open-edit</button>}
+      {teams[0] && <button onClick={() => onDelete(teams[0])}>mock-open-delete</button>}
     </div>
   ),
 }));
@@ -112,6 +132,8 @@ describe("pages/TeamsPage", () => {
   test("renders skeleton when settings query is loading", () => {
     useSettingsObjectsV2Mock.mockReturnValue({
       data: undefined,
+      error: undefined,
+      isError: false,
       isLoading: true,
       refetch: jest.fn(),
     });
@@ -121,9 +143,29 @@ describe("pages/TeamsPage", () => {
     expect(screen.getByText("Mock Skeleton")).toBeInTheDocument();
   });
 
+  test("renders retry state when settings query fails", async () => {
+    const user = userEvent.setup();
+    const refetch = jest.fn().mockResolvedValue(undefined);
+    useSettingsObjectsV2Mock.mockReturnValue({
+      data: undefined,
+      error: new Error("boom"),
+      isError: true,
+      isLoading: false,
+      refetch,
+    });
+
+    render(<TeamsPage />);
+
+    expect(screen.getByText(/Failed to load team ownership data:/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
   test("maps loaded settings items and renders TeamsTable", () => {
     useSettingsObjectsV2Mock.mockReturnValue({
       data,
+      error: undefined,
+      isError: false,
       isLoading: false,
       refetch: jest.fn().mockResolvedValue(undefined),
     });
@@ -134,10 +176,26 @@ describe("pages/TeamsPage", () => {
     expect(screen.getByTestId("teams-count")).toHaveTextContent("1");
   });
 
+  test("shows empty state when there are no teams", () => {
+    useSettingsObjectsV2Mock.mockReturnValue({
+      data: { items: [] },
+      error: undefined,
+      isError: false,
+      isLoading: false,
+      refetch: jest.fn().mockResolvedValue(undefined),
+    });
+
+    render(<TeamsPage />);
+
+    expect(screen.getByText("No teams configured yet.")).toBeInTheDocument();
+  });
+
   test("opens create modal when Add team button is clicked", async () => {
     const user = userEvent.setup();
     useSettingsObjectsV2Mock.mockReturnValue({
       data,
+      error: undefined,
+      isError: false,
       isLoading: false,
       refetch: jest.fn().mockResolvedValue(undefined),
     });
@@ -155,6 +213,8 @@ describe("pages/TeamsPage", () => {
 
     useSettingsObjectsV2Mock.mockReturnValue({
       data,
+      error: undefined,
+      isError: false,
       isLoading: false,
       refetch,
     });
@@ -175,6 +235,8 @@ describe("pages/TeamsPage", () => {
     const user = userEvent.setup();
     useSettingsObjectsV2Mock.mockReturnValue({
       data,
+      error: undefined,
+      isError: false,
       isLoading: false,
       refetch: jest.fn().mockResolvedValue(undefined),
     });
@@ -194,6 +256,8 @@ describe("pages/TeamsPage", () => {
 
     useSettingsObjectsV2Mock.mockReturnValue({
       data,
+      error: undefined,
+      isError: false,
       isLoading: false,
       refetch,
     });
@@ -217,6 +281,8 @@ describe("pages/TeamsPage", () => {
 
     useSettingsObjectsV2Mock.mockReturnValue({
       data,
+      error: undefined,
+      isError: false,
       isLoading: false,
       refetch,
     });

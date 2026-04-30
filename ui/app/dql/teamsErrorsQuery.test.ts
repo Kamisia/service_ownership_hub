@@ -10,10 +10,10 @@ describe("dql/teamsErrorsQuery", () => {
     expect(query).toContain(`lookup [ data ${recordsString} ],`);
   });
 
-  test("buildQuery contains expected filters, sort, and limit 20", () => {
+  test("buildQuery contains expected filters, sort, and default limit 100", () => {
     const query = buildQuery('record(service.name = "__no_match__", team = "")');
 
-    expect(query).toContain("fetch logs, from:-1d, to: now()");
+    expect(query).toContain("fetch logs, from:-24h, to: now()");
     expect(query).toContain("| filter isNotNull(service.name)");
     expect(query).toContain('| filter matchesValue(loglevel, "ERROR")');
     expect(query).toContain("| fieldsKeep timestamp, content, service.name");
@@ -21,6 +21,6 @@ describe("dql/teamsErrorsQuery", () => {
     expect(query).toContain("lookupField:service.name");
     expect(query).toContain("fields:{team}");
     expect(query).toContain("| sort timestamp desc");
-    expect(query).toContain("| limit 20");
+    expect(query).toContain("| limit 100");
   });
 });

@@ -16,6 +16,7 @@
       "displayName": "Services",
       "description": "A list of services owned by the team",
       "type": "list",
+      "default": [],
       "items": {
         "type": "text"
       }

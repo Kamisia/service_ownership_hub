@@ -1,4 +1,5 @@
 import type { Team } from "app/utils/teams/types";
+import { normalize } from "app/utils/teams/helpers";
 
 export function formatTs(ts: string | number) {
   const d = new Date(ts);
@@ -16,10 +17,11 @@ export function parseTeamsMap(teams: Team[] | undefined): string {
   }
   for (const team of teams) {
     for (const service of team.services ?? []) {
-      if (!service) continue;
+      const normalizedService = normalize(service ?? "");
+      if (!normalizedService) continue;
 
-      if (!serviceToTeam.has(service)) {
-        serviceToTeam.set(service, team.name);
+      if (!serviceToTeam.has(normalizedService)) {
+        serviceToTeam.set(normalizedService, normalize(team.name));
       }
     }
   }

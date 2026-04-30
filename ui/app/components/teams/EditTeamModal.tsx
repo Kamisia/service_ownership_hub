@@ -1,6 +1,4 @@
 import React, { useMemo, useState } from "react";
-
-import { useUpdateSettingsV2 } from "@dynatrace-sdk/react-hooks";
 import { Button } from "@dynatrace/strato-components/buttons";
 import { Flex } from "@dynatrace/strato-components/layouts";
 import { Strong, Text } from "@dynatrace/strato-components/typography";
@@ -15,17 +13,17 @@ import {
   TextInput,
 } from "@dynatrace/strato-components-preview/forms";
 import { Modal } from "@dynatrace/strato-components-preview/overlays";
-import { useIntl } from "react-intl";
-
-import type { Team } from "app/utils/teams/types";
+import { useServiceSuggestions } from "app/hooks/useServiceSuggestions";
+import { useTeamMutations } from "app/hooks/useTeamMutations";
 import {
   isServiceAssignedToAnotherTeam,
-  isTeamNameTaken,
-  mapTeamToUpdateSettingsParamsV2,
+  isVersionConflictError,
   normalize,
+  sanitizeServices,
 } from "app/utils/teams/helpers";
+import type { Team } from "app/utils/teams/types";
+import { useIntl } from "react-intl";
 import { teamsMessages } from "./messages";
-import { useServiceSuggestions } from "app/hooks/useServiceSuggestions";
 
 interface EditTeamModalProps {
   team: Team;
@@ -42,14 +40,15 @@ export function EditTeamModal({
 }: EditTeamModalProps) {
   const intl = useIntl();
   const [name, setName] = useState<string>(team.name);
-  const [services, setServices] = useState<string[]>(team.services);
+  const [services, setServices] = useState<string[]>(sanitizeServices(team.services));
   const [newService, setNewService] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const { execute } = useUpdateSettingsV2();
-  const { suggestions, isLoading } = useServiceSuggestions();
-
-  const otherTeamNames =
-    existingTeams?.filter((t) => t.id !== team.id).map((t) => t.name) ?? [];
+  const { updateTeam, isUpdating } = useTeamMutations();
+  const {
+    suggestions,
+    isLoading: suggestionsLoading,
+    error: suggestionsError,
+  } = useServiceSuggestions();
 
   const filteredSuggestions = useMemo(() => {
     const query = normalize(newService).toLowerCase();
@@ -76,7 +75,7 @@ export function EditTeamModal({
     }
 
     setServices((prev) =>
-      prev.some((s) => normalize(s).toLowerCase() === serviceName.toLowerCase())
+      prev.some((service) => normalize(service).toLowerCase() === serviceName.toLowerCase())
         ? prev
         : [...prev, serviceName],
     );
@@ -85,30 +84,28 @@ export function EditTeamModal({
   };
 
   const removeService = (serviceName: string) => {
-    setServices((prev) => prev.filter((x) => x !== serviceName));
+    setServices((prev) => prev.filter((service) => service !== serviceName));
   };
 
-  const onEdit = async () => {
-    const normalizedName = normalize(name);
-    if (!normalizedName) {
-      return setError(intl.formatMessage(teamsMessages.teamNameRequiredError));
-    }
-    if (isTeamNameTaken(otherTeamNames, normalizedName)) {
-      return setError(intl.formatMessage(teamsMessages.teamNameUniqueError));
-    }
-    const hasServiceConflict = services.some((service) =>
-      isServiceAssignedToAnotherTeam(existingTeams, service, team.id),
-    );
-    if (hasServiceConflict) {
-      return setError(intl.formatMessage(teamsMessages.serviceAlreadyAssignedError));
+  const submit = async () => {
+    const result = await updateTeam({
+      team,
+      name,
+      services,
+      existingTeams,
+    });
+
+    if (!result.isValid) {
+      if (result.error === "teamNameRequired") {
+        setError(intl.formatMessage(teamsMessages.teamNameRequiredError));
+      } else if (result.error === "teamNameUnique") {
+        setError(intl.formatMessage(teamsMessages.teamNameUniqueError));
+      } else {
+        setError(intl.formatMessage(teamsMessages.serviceAlreadyAssignedError));
+      }
+      return;
     }
 
-    const updatedTeam: Team = {
-      ...team,
-      name: normalizedName,
-      services,
-    };
-    await execute(mapTeamToUpdateSettingsParamsV2(updatedTeam));
     await afterEdit();
   };
 
@@ -129,6 +126,9 @@ export function EditTeamModal({
         </FormField>
 
         <Strong>{intl.formatMessage(teamsMessages.servicesSectionTitle)}</Strong>
+        <Text textStyle="small">
+          {intl.formatMessage(teamsMessages.addServiceHint)}
+        </Text>
 
         {services.length === 0 ? (
           <Text textStyle="small">
@@ -151,13 +151,18 @@ export function EditTeamModal({
             onChange={setNewService}
             placeholder={intl.formatMessage(teamsMessages.editServicePlaceholder)}
           />
-          <Button onClick={addService} disabled={!normalize(newService)}>
+          <Button onClick={addService} disabled={!normalize(newService) || isUpdating}>
             {intl.formatMessage(teamsMessages.addButton)}
           </Button>
         </Flex>
-        {isLoading && (
+        {suggestionsLoading && (
           <Text textStyle="small">
             {intl.formatMessage(teamsMessages.serviceSuggestionsLoading)}
+          </Text>
+        )}
+        {suggestionsError && (
+          <Text textStyle="small">
+            {intl.formatMessage(teamsMessages.serviceSuggestionsFailed)}
           </Text>
         )}
         {filteredSuggestions.length > 0 && (
@@ -183,11 +188,27 @@ export function EditTeamModal({
         )}
 
         <Flex justifyContent="flex-end" gap={8}>
-          <Button onClick={closeDialog}>
+          <Button onClick={closeDialog} disabled={isUpdating}>
             {intl.formatMessage(teamsMessages.cancelButton)}
           </Button>
-          <Button onClick={() => void onEdit()}>
-            {intl.formatMessage(teamsMessages.saveButton)}
+          <Button
+            onClick={() => {
+              void submit().catch((e) => {
+                setError(
+                  intl.formatMessage(
+                    isVersionConflictError(e)
+                      ? teamsMessages.versionConflictError
+                      : teamsMessages.updateTeamFailedError,
+                  ),
+                );
+                console.error(e);
+              });
+            }}
+            disabled={isUpdating}
+          >
+            {intl.formatMessage(
+              isUpdating ? teamsMessages.savingButton : teamsMessages.saveButton,
+            )}
           </Button>
         </Flex>
       </Flex>

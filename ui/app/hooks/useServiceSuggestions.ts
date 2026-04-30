@@ -7,7 +7,13 @@ type ServiceRecord = {
 };
 
 export function useServiceSuggestions() {
-  const result = useDql({ query: servicesQuery() });
+  const result = useDql(
+    { query: servicesQuery() },
+    {
+      staleTime: 5 * 60 * 1000,
+      refetchInterval: 0,
+    },
+  );
 
   const suggestions = useMemo(() => {
     const records = (result.data?.records ?? []) as ServiceRecord[];
@@ -23,5 +29,7 @@ export function useServiceSuggestions() {
   return {
     suggestions,
     isLoading: result.isLoading,
+    error: result.error,
+    refetch: result.refetch,
   };
 }

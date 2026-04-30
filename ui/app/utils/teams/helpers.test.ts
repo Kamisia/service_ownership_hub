@@ -1,10 +1,13 @@
-﻿import {
+import {
   addServiceUnique,
+  getConflictingServices,
   isTeamNameTaken,
+  isVersionConflictError,
   key,
   mapAppSettingsObjectToTeam,
   mapTeamToUpdateSettingsParamsV2,
   normalize,
+  sanitizeServices,
 } from "./helpers";
 
 type AppSettingsSource = Parameters<typeof mapAppSettingsObjectToTeam>[0];
@@ -42,6 +45,12 @@ describe("teams/helpers", () => {
     expect(isTeamNameTaken(["Platform Team"], "SRE Team")).toBe(false);
   });
 
+  test("sanitizeServices trims, deduplicates and removes empty values", () => {
+    expect(
+      sanitizeServices([" auth-service ", "", "Auth-Service", "payments-api"]),
+    ).toEqual(["auth-service", "payments-api"]);
+  });
+
   test("mapAppSettingsObjectToTeam maps objectId/value/version correctly", () => {
     const source: AppSettingsSource = {
       objectId: "team-1",
@@ -60,11 +69,26 @@ describe("teams/helpers", () => {
     });
   });
 
+  test("mapAppSettingsObjectToTeam falls back to safe defaults", () => {
+    const source: AppSettingsSource = {
+      objectId: "team-2",
+      version: "1",
+      value: {},
+    };
+
+    expect(mapAppSettingsObjectToTeam(source)).toEqual({
+      id: "team-2",
+      name: "",
+      services: [],
+      version: "1",
+    });
+  });
+
   test("mapTeamToUpdateSettingsParamsV2 builds update payload correctly", () => {
     const team: TeamSource = {
       id: "team-1",
-      name: "Platform Team",
-      services: ["auth-service"],
+      name: " Platform Team ",
+      services: ["auth-service", " auth-service "],
       version: "3",
     };
 
@@ -78,5 +102,32 @@ describe("teams/helpers", () => {
         },
       },
     });
+  });
+
+  test("getConflictingServices returns conflicting service names", () => {
+    expect(
+      getConflictingServices(
+        [
+          {
+            id: "t-1",
+            name: "Platform Team",
+            services: ["auth-service"],
+            version: "1",
+          },
+          {
+            id: "t-2",
+            name: "Payments Team",
+            services: ["payments-api"],
+            version: "1",
+          },
+        ],
+        " payments-api ",
+      ),
+    ).toEqual(["payments-api"]);
+  });
+
+  test("isVersionConflictError detects concurrency-related failures", () => {
+    expect(isVersionConflictError(new Error("412 version conflict"))).toBe(true);
+    expect(isVersionConflictError(new Error("network timeout"))).toBe(false);
   });
 });

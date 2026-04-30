@@ -23,13 +23,13 @@ export function TeamsTable({ teams,  onEdit, onDelete }: TeamsTableProps) {
   ({ rowData }) => (
     <div style={{ display: "flex", alignItems: "center", height: "100%", minHeight: 32 }}>
       <div style={{ minWidth: 0 }}>
-        {rowData.services.length === 0 ? (
+        {(rowData.services ?? []).length === 0 ? (
           <span style={{ opacity: 0.7 }}>
             {intl.formatMessage(teamsMessages.tableNoServicesText)}
           </span>
         ) : (
           <ChipGroup>
-            {rowData.services.map((s) => (
+            {(rowData.services ?? []).map((s) => (
               <Chip key={s}>{s}</Chip>
             ))}
           </ChipGroup>
@@ -96,13 +96,15 @@ const actionsCell = useCallback<DataTableCustomCell<Team, unknown>>(
 
 
   return (
-    <div style={{ width: "100%", margin: "0 auto", minWidth: 900 }}>
+    <div style={{ width: "100%", margin: "0 auto", overflowX: "auto" }}>
       <DataTable
         data={teams}
         columns={columns}
         fullWidth
         sortable
-      />
+      >
+        <DataTable.Pagination defaultPageSize={10} pageSizeOptions={[10, 20, 50]} />
+      </DataTable>
     </div>
   );
 }

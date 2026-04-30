@@ -81,6 +81,19 @@ export const teamsMessages = defineMessages({
     id: "teams.create.failed",
     defaultMessage: "Failed to create team.",
   },
+  updateTeamFailedError: {
+    id: "teams.update.failed",
+    defaultMessage: "Failed to save team changes.",
+  },
+  deleteTeamFailedError: {
+    id: "teams.delete.failed",
+    defaultMessage: "Failed to delete team.",
+  },
+  versionConflictError: {
+    id: "teams.mutation.versionConflict",
+    defaultMessage:
+      "The data changed in the meantime. Refresh the page and try again.",
+  },
   deleteTeamConfirmation: {
     id: "teams.delete.confirmation",
     defaultMessage: 'Are you sure you want to delete "{teamName}" team?',
@@ -112,5 +125,33 @@ export const teamsMessages = defineMessages({
   serviceSuggestionsLoading: {
     id: "teams.services.suggestions.loading",
     defaultMessage: "Loading suggestions...",
+  },
+  serviceSuggestionsFailed: {
+    id: "teams.services.suggestions.failed",
+    defaultMessage: "Could not load service suggestions.",
+  },
+  addServiceHint: {
+    id: "teams.services.hint",
+    defaultMessage: "Service names must be unique across teams.",
+  },
+  emptyTeamsTitle: {
+    id: "teams.empty.title",
+    defaultMessage: "No teams configured yet.",
+  },
+  emptyTeamsDescription: {
+    id: "teams.empty.description",
+    defaultMessage: "Create the first ownership team to start mapping services.",
+  },
+  creatingButton: {
+    id: "teams.actions.creating",
+    defaultMessage: "Creating...",
+  },
+  savingButton: {
+    id: "teams.actions.saving",
+    defaultMessage: "Saving...",
+  },
+  deletingButton: {
+    id: "teams.actions.deleting",
+    defaultMessage: "Deleting...",
   },
 });

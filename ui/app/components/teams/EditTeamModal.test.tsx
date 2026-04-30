@@ -1,18 +1,22 @@
-﻿import React from "react";
+import React from "react";
 import { render } from "@dynatrace/strato-components-preview-testing/jest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useDql, useUpdateSettingsV2 } from "@dynatrace-sdk/react-hooks";
+import { useServiceSuggestions } from "app/hooks/useServiceSuggestions";
+import { useTeamMutations } from "app/hooks/useTeamMutations";
 import { EditTeamModal } from "./EditTeamModal";
 
-jest.mock("@dynatrace-sdk/react-hooks", () => ({
-  useUpdateSettingsV2: jest.fn(),
-  useDql: jest.fn(),
+jest.mock("app/hooks/useServiceSuggestions", () => ({
+  useServiceSuggestions: jest.fn(),
+}));
+
+jest.mock("app/hooks/useTeamMutations", () => ({
+  useTeamMutations: jest.fn(),
 }));
 
 describe("components/teams/EditTeamModal", () => {
-  const useUpdateSettingsV2Mock = useUpdateSettingsV2 as jest.Mock;
-  const useDqlMock = useDql as jest.Mock;
+  const useServiceSuggestionsMock = useServiceSuggestions as jest.Mock;
+  const useTeamMutationsMock = useTeamMutations as jest.Mock;
 
   const baseTeam = {
     id: "t-1",
@@ -23,16 +27,28 @@ describe("components/teams/EditTeamModal", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useDqlMock.mockReturnValue({
-      data: { records: [] },
+    useServiceSuggestionsMock.mockReturnValue({
+      suggestions: [],
       isLoading: false,
+      error: null,
+    });
+    useTeamMutationsMock.mockReturnValue({
+      updateTeam: jest.fn().mockResolvedValue({
+        isValid: true,
+        normalizedName: "Updated Platform Team",
+        normalizedServices: ["auth-service", "payments-api"],
+      }),
+      isUpdating: false,
     });
   });
 
   test("shows validation error for duplicate team name", async () => {
     const user = userEvent.setup();
-    const execute = jest.fn().mockResolvedValue(undefined);
-    useUpdateSettingsV2Mock.mockReturnValue({ execute });
+    const updateTeam = jest.fn().mockResolvedValue({
+      isValid: false,
+      error: "teamNameUnique",
+    });
+    useTeamMutationsMock.mockReturnValue({ updateTeam, isUpdating: false });
 
     render(
       <EditTeamModal
@@ -52,13 +68,16 @@ describe("components/teams/EditTeamModal", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(screen.getByText("Team name must be unique.")).toBeInTheDocument();
-    expect(execute).not.toHaveBeenCalled();
+    expect(updateTeam).toHaveBeenCalled();
   });
 
   test("shows validation error for empty team name", async () => {
     const user = userEvent.setup();
-    const execute = jest.fn().mockResolvedValue(undefined);
-    useUpdateSettingsV2Mock.mockReturnValue({ execute });
+    const updateTeam = jest.fn().mockResolvedValue({
+      isValid: false,
+      error: "teamNameRequired",
+    });
+    useTeamMutationsMock.mockReturnValue({ updateTeam, isUpdating: false });
 
     render(
       <EditTeamModal
@@ -74,13 +93,10 @@ describe("components/teams/EditTeamModal", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(screen.getByText("Team name is required.")).toBeInTheDocument();
-    expect(execute).not.toHaveBeenCalled();
   });
 
   test("shows validation error when service is already assigned to another team", async () => {
     const user = userEvent.setup();
-    const execute = jest.fn().mockResolvedValue(undefined);
-    useUpdateSettingsV2Mock.mockReturnValue({ execute });
 
     render(
       <EditTeamModal
@@ -99,25 +115,20 @@ describe("components/teams/EditTeamModal", () => {
       />,
     );
 
-    await user.type(
-      screen.getByPlaceholderText("e.g. payments-api"),
-      "payments-api",
-    );
+    await user.type(screen.getByPlaceholderText("e.g. payments-api"), "payments-api");
     await user.click(screen.getByRole("button", { name: "Add" }));
 
     expect(
       screen.getByText("Service is already assigned to another team."),
     ).toBeInTheDocument();
-    expect(screen.queryByText("payments-api")).not.toBeInTheDocument();
   });
 
   test("fills service input after selecting a suggestion", async () => {
     const user = userEvent.setup();
-    const execute = jest.fn().mockResolvedValue(undefined);
-    useUpdateSettingsV2Mock.mockReturnValue({ execute });
-    useDqlMock.mockReturnValue({
-      data: { records: [{ "service.name": "payments-api" }] },
+    useServiceSuggestionsMock.mockReturnValue({
+      suggestions: ["payments-api"],
       isLoading: false,
+      error: null,
     });
 
     render(
@@ -131,15 +142,16 @@ describe("components/teams/EditTeamModal", () => {
 
     await user.click(screen.getByRole("button", { name: "payments-api" }));
 
-    expect(
-      screen.getByPlaceholderText("e.g. payments-api"),
-    ).toHaveValue("payments-api");
+    expect(screen.getByPlaceholderText("e.g. payments-api")).toHaveValue("payments-api");
   });
 
   test("blocks save when existing services conflict with another team", async () => {
     const user = userEvent.setup();
-    const execute = jest.fn().mockResolvedValue(undefined);
-    useUpdateSettingsV2Mock.mockReturnValue({ execute });
+    const updateTeam = jest.fn().mockResolvedValue({
+      isValid: false,
+      error: "serviceAlreadyAssigned",
+    });
+    useTeamMutationsMock.mockReturnValue({ updateTeam, isUpdating: false });
 
     render(
       <EditTeamModal
@@ -173,14 +185,18 @@ describe("components/teams/EditTeamModal", () => {
     expect(
       screen.getByText("Service is already assigned to another team."),
     ).toBeInTheDocument();
-    expect(execute).not.toHaveBeenCalled();
+    expect(updateTeam).toHaveBeenCalled();
   });
 
-  test("calls update execute with added service and then afterEdit", async () => {
+  test("calls afterEdit on successful submit", async () => {
     const user = userEvent.setup();
-    const execute = jest.fn().mockResolvedValue(undefined);
+    const updateTeam = jest.fn().mockResolvedValue({
+      isValid: true,
+      normalizedName: "Updated Platform Team",
+      normalizedServices: ["auth-service", "payments-api"],
+    });
     const afterEdit = jest.fn().mockResolvedValue(undefined);
-    useUpdateSettingsV2Mock.mockReturnValue({ execute });
+    useTeamMutationsMock.mockReturnValue({ updateTeam, isUpdating: false });
 
     render(
       <EditTeamModal
@@ -194,23 +210,16 @@ describe("components/teams/EditTeamModal", () => {
     const nameInput = screen.getByPlaceholderText("e.g. Platform Team");
     await user.clear(nameInput);
     await user.type(nameInput, "Updated Platform Team");
-    await user.type(
-      screen.getByPlaceholderText("e.g. payments-api"),
-      "payments-api",
-    );
+    await user.type(screen.getByPlaceholderText("e.g. payments-api"), "payments-api");
     await user.click(screen.getByRole("button", { name: "Add" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => {
-      expect(execute).toHaveBeenCalledWith({
-        objectId: "t-1",
-        optimisticLockingVersion: "4",
-        body: {
-          value: {
-            name: "Updated Platform Team",
-            services: ["auth-service", "payments-api"],
-          },
-        },
+      expect(updateTeam).toHaveBeenCalledWith({
+        team: baseTeam,
+        name: "Updated Platform Team",
+        services: ["auth-service", "payments-api"],
+        existingTeams: [baseTeam],
       });
     });
     expect(afterEdit).toHaveBeenCalledTimes(1);

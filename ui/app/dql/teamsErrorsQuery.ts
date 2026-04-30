@@ -1,6 +1,13 @@
- export function buildQuery(recordsString: string) {
+export const DEFAULT_ERRORS_LOOKBACK = "-24h";
+export const DEFAULT_ERRORS_LIMIT = 100;
+
+export function buildQuery(
+  recordsString: string,
+  lookback = DEFAULT_ERRORS_LOOKBACK,
+  limit = DEFAULT_ERRORS_LIMIT,
+) {
   return `
-fetch logs, from:-1d, to: now()
+fetch logs, from:${lookback}, to: now()
 | fieldsAdd service.name
 | filter isNotNull(service.name)
 | filter matchesValue(loglevel, "ERROR")
@@ -10,6 +17,6 @@ fetch logs, from:-1d, to: now()
     lookupField:service.name,
     fields:{team}
 | sort timestamp desc
-| limit 20
+| limit ${limit}
 `;
 }

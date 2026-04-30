@@ -1,16 +1,35 @@
-import { AppSettingsObject } from "@dynatrace-sdk/client-app-settings-v2";
-import { Team } from "./types";
-import { UpdateSettingsParamsV2 } from "@dynatrace-sdk/react-hooks";
+import type { AppSettingsObject } from "@dynatrace-sdk/client-app-settings-v2";
+import type { UpdateSettingsParamsV2 } from "@dynatrace-sdk/react-hooks";
+import type { Team } from "./types";
 
 export const normalize = (s: string) => s.trim();
 export const key = (s: string) => normalize(s).toLowerCase();
+
+export function sanitizeServices(services: string[] | undefined): string[] {
+  if (!services) {
+    return [];
+  }
+
+  return services.reduce<string[]>((acc, serviceName) => {
+    const normalizedServiceName = normalize(serviceName ?? "");
+    if (!normalizedServiceName) {
+      return acc;
+    }
+
+    if (acc.some((existingServiceName) => key(existingServiceName) === key(normalizedServiceName))) {
+      return acc;
+    }
+
+    return [...acc, normalizedServiceName];
+  }, []);
+}
 
 export function addServiceUnique(list: string[], name: string): string[] {
   const n = normalize(name);
   if (!n) return list;
   if (list.some((s) => key(s) === key(n))) return list;
 
-  return [...list, name];
+  return [...list, n];
 }
 
 export function isTeamNameTaken(existing: string[], name: string): boolean {
@@ -21,8 +40,8 @@ export function isTeamNameTaken(existing: string[], name: string): boolean {
 export function mapAppSettingsObjectToTeam(source: AppSettingsObject): Team {
   return {
     id: source.objectId,
-    name: source.value?.name as string,
-    services: source.value?.services as string[],
+    name: normalize(String(source.value?.name ?? "")),
+    services: sanitizeServices(source.value?.services as string[] | undefined),
     version: source.version,
   } as Team;
 }
@@ -35,19 +54,39 @@ export function mapTeamToUpdateSettingsParamsV2(
     optimisticLockingVersion: source.version,
     body: {
       value: {
-        name: source.name,
-        services: source.services,
+        name: normalize(source.name),
+        services: sanitizeServices(source.services),
       },
     },
   } as UpdateSettingsParamsV2;
 }
- export function isServiceAssignedToAnotherTeam(
-  teams :Team[],
+
+export function getConflictingServices(
+  teams: Team[],
+  serviceName: string,
+  currentTeamId?: string,
+): string[] {
+  const s = key(serviceName);
+  return teams
+    .filter((team) => team.id !== currentTeamId)
+    .flatMap((team) => sanitizeServices(team.services))
+    .filter((existingServiceName) => key(existingServiceName) === s);
+}
+
+export function isServiceAssignedToAnotherTeam(
+  teams: Team[],
   serviceName: string,
   currentTeamId?: string,
 ): boolean {
-  const s = key(serviceName);
-  return teams.some(
-    (t) => t.id !== currentTeamId && (t.services ?? []).some((x) => key(x) === s),
-  );
+  return getConflictingServices(teams, serviceName, currentTeamId).length > 0;
+}
+
+export function isVersionConflictError(error: unknown): boolean {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "";
+  return /optimistic|version|conflict|412|409/i.test(message);
 }

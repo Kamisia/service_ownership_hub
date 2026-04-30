@@ -1,6 +1,6 @@
-﻿import React from "react";
+import React from "react";
 import { render } from "@dynatrace/strato-components-preview-testing/jest";
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useDql, useSettingsObjectsV2 } from "@dynatrace-sdk/react-hooks";
 import TeamsErrorsPage from "./TeamsErrorsPage";
@@ -12,10 +12,12 @@ type TeamsErrorRow = {
   serviceName: string;
   team: string;
   content: string;
+  isAssigned: boolean;
 };
 
 type TeamsErrorsTableProps = {
   rows: TeamsErrorRow[];
+  onAssignTeam: (row: TeamsErrorRow) => void;
 };
 
 jest.mock("@dynatrace-sdk/react-hooks", () => ({
@@ -23,7 +25,32 @@ jest.mock("@dynatrace-sdk/react-hooks", () => ({
   useSettingsObjectsV2: jest.fn(),
 }));
 
+jest.mock("@dynatrace/strato-components/content", () => ({
+  Skeleton: () => <div>Mock Skeleton</div>,
+}));
+
+jest.mock("@dynatrace/strato-components-preview/content", () => {
+  function MockMessageContainer({ children }: { children: React.ReactNode }) {
+    return <div>{children}</div>;
+  }
+  function MockMessageContainerTitle({ children }: { children: React.ReactNode }) {
+    return <div>{children}</div>;
+  }
+  function MockMessageContainerDescription({ children }: { children: React.ReactNode }) {
+    return <div>{children}</div>;
+  }
+
+  const MessageContainer = MockMessageContainer as typeof MockMessageContainer & {
+    Title: typeof MockMessageContainerTitle;
+    Description: typeof MockMessageContainerDescription;
+  };
+  MessageContainer.Title = MockMessageContainerTitle;
+  MessageContainer.Description = MockMessageContainerDescription;
+  return { MessageContainer };
+});
+
 jest.mock("../dql/teamsErrorsQuery", () => ({
+  DEFAULT_ERRORS_LIMIT: 100,
   buildQuery: jest.fn(),
 }));
 
@@ -40,6 +67,12 @@ jest.mock("../components/teamsErrors/TeamsErrorsTable", () => ({
   TeamsErrorsTable: (props: TeamsErrorsTableProps) => teamsErrorsTableMock(props),
 }));
 
+jest.mock("app/components/teamsErrors/AssignTeamModal", () => ({
+  AssignTeamModal: ({ serviceName }: { serviceName: string }) => (
+    <div>Assign Modal Open: {serviceName}</div>
+  ),
+}));
+
 describe("pages/TeamsErrorsPage", () => {
   const useSettingsObjectsV2Mock = useSettingsObjectsV2 as jest.Mock;
   const useDqlMock = useDql as jest.Mock;
@@ -52,9 +85,24 @@ describe("pages/TeamsErrorsPage", () => {
     parseTeamsMapMock.mockReturnValue("mock-records");
     buildQueryMock.mockReturnValue("mock-query");
     formatTsMock.mockImplementation((ts: string | number) => `formatted-${ts}`);
+    useSettingsObjectsV2Mock.mockReturnValue({
+      data: { items: [] },
+      error: undefined,
+      isError: false,
+      isLoading: false,
+      refetch: jest.fn(),
+    });
+    useDqlMock.mockReturnValue({
+      data: { records: [] },
+      isLoading: false,
+      isFetching: false,
+      error: undefined,
+      forceRefetch: jest.fn(),
+      refetch: jest.fn(),
+    });
   });
 
-  test("builds DQL query from teams mapping and executes useDql", () => {
+  test("builds DQL query from teams mapping and executes useDql with enabled flag", () => {
     useSettingsObjectsV2Mock.mockReturnValue({
       data: {
         items: [
@@ -65,12 +113,9 @@ describe("pages/TeamsErrorsPage", () => {
           },
         ],
       },
-    });
-
-    useDqlMock.mockReturnValue({
-      data: { records: [] },
-      isLoading: false,
       error: undefined,
+      isError: false,
+      isLoading: false,
       refetch: jest.fn(),
     });
 
@@ -78,11 +123,13 @@ describe("pages/TeamsErrorsPage", () => {
 
     expect(parseTeamsMapMock).toHaveBeenCalledTimes(1);
     expect(buildQueryMock).toHaveBeenCalledWith("mock-records");
-    expect(useDqlMock).toHaveBeenCalledWith({ query: "mock-query" });
+    expect(useDqlMock).toHaveBeenCalledWith(
+      { query: "mock-query" },
+      expect.objectContaining({ enabled: true, staleTime: 60000 }),
+    );
   });
 
-  test("maps DQL records to TeamsErrorRow shape with fallbacks", () => {
-    useSettingsObjectsV2Mock.mockReturnValue({ data: { items: [] } });
+  test("maps DQL records to TeamsErrorRow shape with unassigned team fallback", () => {
     useDqlMock.mockReturnValue({
       data: {
         records: [
@@ -98,7 +145,9 @@ describe("pages/TeamsErrorsPage", () => {
         ],
       },
       isLoading: false,
+      isFetching: false,
       error: undefined,
+      forceRefetch: jest.fn(),
       refetch: jest.fn(),
     });
 
@@ -111,13 +160,15 @@ describe("pages/TeamsErrorsPage", () => {
       {
         timestampText: "formatted-2026-02-17T10:00:00.000Z",
         content: "boom",
+        isAssigned: true,
         team: "Platform Team",
         serviceName: "auth-service",
       },
       {
         timestampText: "formatted-2026-02-17T11:00:00.000Z",
         content: "",
-        team: "",
+        isAssigned: false,
+        team: "Unassigned",
         serviceName: "",
       },
     ]);
@@ -125,7 +176,6 @@ describe("pages/TeamsErrorsPage", () => {
 
   test("filters rows by service, team, and content case-insensitively", async () => {
     const user = userEvent.setup();
-    useSettingsObjectsV2Mock.mockReturnValue({ data: { items: [] } });
     useDqlMock.mockReturnValue({
       data: {
         records: [
@@ -144,7 +194,9 @@ describe("pages/TeamsErrorsPage", () => {
         ],
       },
       isLoading: false,
+      isFetching: false,
       error: undefined,
+      forceRefetch: jest.fn(),
       refetch: jest.fn(),
     });
 
@@ -159,15 +211,54 @@ describe("pages/TeamsErrorsPage", () => {
     expect(rows[0].team).toBe("Platform Team");
   });
 
-  test("calls refetch when Refresh button is clicked", async () => {
+  test("opens assign modal for unassigned service", () => {
+    useDqlMock.mockReturnValue({
+      data: {
+        records: [
+          {
+            timestamp: "1",
+            content: "DB timeout",
+            "service.name": "payments-api",
+          },
+        ],
+      },
+      isLoading: false,
+      isFetching: false,
+      error: undefined,
+      forceRefetch: jest.fn(),
+      refetch: jest.fn(),
+    });
+
+    render(<TeamsErrorsPage />);
+
+    const props = teamsErrorsTableMock.mock.calls[0][0];
+    act(() => {
+      props.onAssignTeam(props.rows[0]);
+    });
+
+    expect(screen.getByText("Assign Modal Open: payments-api")).toBeInTheDocument();
+  });
+
+  test("forces ownership and logs refresh when Refresh button is clicked", async () => {
     const user = userEvent.setup();
+    const ownershipRefetch = jest.fn().mockResolvedValue(undefined);
+    const forceRefetch = jest.fn().mockResolvedValue(undefined);
     const refetch = jest.fn().mockResolvedValue(undefined);
 
-    useSettingsObjectsV2Mock.mockReturnValue({ data: { items: [] } });
+    useSettingsObjectsV2Mock.mockReturnValue({
+      data: { items: [] },
+      error: undefined,
+      isError: false,
+      isLoading: false,
+      refetch: ownershipRefetch,
+    });
+
     useDqlMock.mockReturnValue({
       data: { records: [] },
       isLoading: false,
+      isFetching: false,
       error: undefined,
+      forceRefetch,
       refetch,
     });
 
@@ -176,33 +267,66 @@ describe("pages/TeamsErrorsPage", () => {
     await user.click(screen.getByRole("button", { name: "Refresh" }));
 
     await waitFor(() => {
-      expect(refetch).toHaveBeenCalledTimes(1);
+      expect(ownershipRefetch).toHaveBeenCalledTimes(1);
+      expect(forceRefetch).toHaveBeenCalledWith({ cancelRefetch: true });
     });
   });
 
-  test("renders loading and error states correctly", () => {
-    useSettingsObjectsV2Mock.mockReturnValue({ data: { items: [] } });
-
-    useDqlMock.mockReturnValueOnce({
-      data: { records: [] },
-      isLoading: true,
+  test("renders ownership loading state before logs query", () => {
+    useSettingsObjectsV2Mock.mockReturnValue({
+      data: undefined,
       error: undefined,
+      isError: false,
+      isLoading: true,
       refetch: jest.fn(),
     });
 
-    const { unmount } = render(<TeamsErrorsPage />);
-    expect(screen.getByText(/Loading/)).toBeInTheDocument();
+    render(<TeamsErrorsPage />);
 
-    unmount();
+    expect(screen.getByText("Loading ownership mapping...")).toBeInTheDocument();
+    expect(useDqlMock).toHaveBeenCalledWith(
+      { query: "mock-query" },
+      expect.objectContaining({ enabled: false }),
+    );
+  });
 
-    useDqlMock.mockReturnValueOnce({
-      data: { records: [] },
+  test("renders ownership error state and retries settings fetch", async () => {
+    const user = userEvent.setup();
+    const refetch = jest.fn().mockResolvedValue(undefined);
+    useSettingsObjectsV2Mock.mockReturnValue({
+      data: undefined,
+      error: new Error("settings boom"),
+      isError: true,
       isLoading: false,
+      refetch,
+    });
+
+    render(<TeamsErrorsPage />);
+
+    expect(screen.getByText(/Failed to load ownership mapping:/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Refresh" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  test("renders log query error state", () => {
+    useDqlMock.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isFetching: false,
       error: new Error("boom"),
+      forceRefetch: jest.fn(),
       refetch: jest.fn(),
     });
 
     render(<TeamsErrorsPage />);
     expect(screen.getByText(/Failed to load logs:/)).toBeInTheDocument();
+  });
+
+  test("renders empty state when there are no rows", () => {
+    render(<TeamsErrorsPage />);
+
+    expect(
+      screen.getByText("No matching ERROR logs were found for the selected timeframe."),
+    ).toBeInTheDocument();
   });
 });

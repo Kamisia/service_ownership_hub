@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 
-import { useCreateSettingsV2 } from "@dynatrace-sdk/react-hooks";
 import { Button } from "@dynatrace/strato-components/buttons";
 import { Flex } from "@dynatrace/strato-components/layouts";
 import { Strong, Text } from "@dynatrace/strato-components/typography";
@@ -15,15 +14,15 @@ import {
   TextInput,
 } from "@dynatrace/strato-components-preview/forms";
 import { Modal } from "@dynatrace/strato-components-preview/overlays";
+import { useTeamMutations } from "app/hooks/useTeamMutations";
 import { useIntl } from "react-intl";
-import { TEAMS_SCHEMA_ID } from "app/utils/teams/constants";
 import {
   addServiceUnique,
   isServiceAssignedToAnotherTeam,
-  isTeamNameTaken,
+  isVersionConflictError,
   normalize,
 } from "app/utils/teams/helpers";
-import { Team } from "app/utils/teams/types";
+import type { Team } from "app/utils/teams/types";
 import { teamsMessages } from "./messages";
 import { useServiceSuggestions } from "app/hooks/useServiceSuggestions";
 
@@ -43,9 +42,12 @@ export function CreateTeamModal({
   const [services, setServices] = useState<string[]>([]);
   const [newService, setNewService] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const { execute } = useCreateSettingsV2();
-  const otherTeamNames = existingTeams.map((t) => t.name);
-  const { suggestions, isLoading } = useServiceSuggestions();
+  const { createTeam, isCreating } = useTeamMutations();
+  const {
+    suggestions,
+    isLoading: suggestionsLoading,
+    error: suggestionsError,
+  } = useServiceSuggestions();
 
   const filteredSuggestions = useMemo(() => {
     const query = normalize(newService).toLowerCase();
@@ -62,34 +64,24 @@ export function CreateTeamModal({
       .slice(0, 8);
   }, [newService, services, suggestions]);
 
-  const createTeam = async (teamName: string, teamServices: string[]) => {
-    await execute({
-      body: {
-        schemaId: TEAMS_SCHEMA_ID,
-        value: {
-          name: teamName,
-          services: teamServices,
-        },
-      },
-    });
-  };
-
   const submit = async () => {
-    const normalizedName = normalize(name);
-    if (!normalizedName) {
-      return setError(intl.formatMessage(teamsMessages.teamNameRequiredError));
-    }
-    if (isTeamNameTaken(otherTeamNames, normalizedName)) {
-      return setError(intl.formatMessage(teamsMessages.teamNameUniqueError));
-    }
-    const hasServiceConflict = services.some((service) =>
-      isServiceAssignedToAnotherTeam(existingTeams, service),
-    );
-    if (hasServiceConflict) {
-      return setError(intl.formatMessage(teamsMessages.serviceAlreadyAssignedError));
+    const result = await createTeam({
+      name,
+      services,
+      existingTeams,
+    });
+
+    if (!result.isValid) {
+      if (result.error === "teamNameRequired") {
+        setError(intl.formatMessage(teamsMessages.teamNameRequiredError));
+      } else if (result.error === "teamNameUnique") {
+        setError(intl.formatMessage(teamsMessages.teamNameUniqueError));
+      } else {
+        setError(intl.formatMessage(teamsMessages.serviceAlreadyAssignedError));
+      }
+      return;
     }
 
-    await createTeam(name, services);
     await afterSave();
   };
 
@@ -110,6 +102,9 @@ export function CreateTeamModal({
         </FormField>
 
         <Strong>{intl.formatMessage(teamsMessages.servicesSectionTitle)}</Strong>
+        <Text textStyle="small">
+          {intl.formatMessage(teamsMessages.addServiceHint)}
+        </Text>
 
         {services.length === 0 ? (
           <Text textStyle="small">
@@ -122,8 +117,8 @@ export function CreateTeamModal({
                 {service}
                 <Chip.DeleteButton
                   onClick={() =>
-                    setServices(
-                      services.filter(
+                    setServices((previousServices) =>
+                      previousServices.filter(
                         (checkedService) => checkedService !== service,
                       ),
                     )
@@ -154,14 +149,19 @@ export function CreateTeamModal({
               setNewService("");
               setError(null);
             }}
-            disabled={!normalize(newService)}
+            disabled={!normalize(newService) || isCreating}
           >
             {intl.formatMessage(teamsMessages.addButton)}
           </Button>
         </Flex>
-        {isLoading && (
+        {suggestionsLoading && (
           <Text textStyle="small">
             {intl.formatMessage(teamsMessages.serviceSuggestionsLoading)}
+          </Text>
+        )}
+        {suggestionsError && (
+          <Text textStyle="small">
+            {intl.formatMessage(teamsMessages.serviceSuggestionsFailed)}
           </Text>
         )}
         {filteredSuggestions.length > 0 && (
@@ -187,18 +187,27 @@ export function CreateTeamModal({
         )}
 
         <Flex justifyContent="flex-end" gap={8}>
-          <Button onClick={closeDialog}>
+          <Button onClick={closeDialog} disabled={isCreating}>
             {intl.formatMessage(teamsMessages.cancelButton)}
           </Button>
           <Button
             onClick={() => {
               void submit().catch((e) => {
-                setError(intl.formatMessage(teamsMessages.createTeamFailedError));
+                setError(
+                  intl.formatMessage(
+                    isVersionConflictError(e)
+                      ? teamsMessages.versionConflictError
+                      : teamsMessages.createTeamFailedError,
+                  ),
+                );
                 console.error(e);
               });
             }}
+            disabled={isCreating}
           >
-            {intl.formatMessage(teamsMessages.createButton)}
+            {intl.formatMessage(
+              isCreating ? teamsMessages.creatingButton : teamsMessages.createButton,
+            )}
           </Button>
         </Flex>
       </Flex>
